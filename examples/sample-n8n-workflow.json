@@ -1,0 +1,111 @@
+{
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "1735e687-9835-4936-b244-969563034f8c",
+      "name": "Start",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        260,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://api.example.com/data",
+        "method": "GET",
+        "authentication": "none"
+      },
+      "id": "b5e68798-3549-36b2-4496-9563034f8c17",
+      "name": "HTTP Request",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        500,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "c6f79835-4936-b244-9695-63034f8c1735",
+      "name": "Set",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.1,
+      "position": [
+        740,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.status }}",
+              "operation": "equals",
+              "value2": "active"
+            }
+          ]
+        }
+      },
+      "id": "d7g8a936-4936-b244-9695-63034f8c1735",
+      "name": "IF",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        980,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Start": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Set",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set": {
+      "main": [
+        [
+          {
+            "node": "IF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "4f8c1735-9835-4936-b244-969563034f8c",
+  "meta": {
+    "instanceId": "1735e68798354936b244969563034f8c1735e687"
+  },
+  "id": "P4f8c1735-9835-4936-b244-969563034f8c",
+  "name": "Sample Workflow for Quote Generation",
+  "createdAt": "2023-01-01T10:00:00.000Z",
+  "updatedAt": "2023-01-01T10:00:00.000Z"
+}

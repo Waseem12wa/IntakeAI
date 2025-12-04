@@ -1,0 +1,193 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://intakeai.com/schemas/n8n-workflow.schema.json",
+  "title": "n8n Workflow Schema",
+  "description": "Schema for validating n8n workflow export files",
+  "type": "object",
+  "required": ["nodes", "connections"],
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "The name of the workflow"
+    },
+    "nodes": {
+      "type": "array",
+      "description": "Array of workflow nodes",
+      "items": {
+        "type": "object",
+        "required": ["id", "type", "name", "parameters"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique identifier for the node"
+          },
+          "type": {
+            "type": "string",
+            "description": "Type of the node (e.g., 'n8n-nodes-base.httpRequest')"
+          },
+          "name": {
+            "type": "string",
+            "description": "Display name of the node"
+          },
+          "position": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            },
+            "description": "Node position coordinates [x, y]"
+          },
+          "parameters": {
+            "type": "object",
+            "description": "Node-specific parameters and configuration",
+            "properties": {
+              "operation": {
+                "type": "string",
+                "description": "Operation to perform (if applicable)"
+              },
+              "resource": {
+                "type": "string",
+                "description": "Resource to operate on (if applicable)"
+              },
+              "url": {
+                "type": "string",
+                "format": "uri",
+                "description": "URL for HTTP requests"
+              },
+              "method": {
+                "type": "string",
+                "enum": ["GET", "POST", "PUT", "DELETE", "PATCH"],
+                "description": "HTTP method for requests"
+              },
+              "authentication": {
+                "type": "string",
+                "description": "Authentication method used"
+              },
+              "headers": {
+                "type": "object",
+                "description": "HTTP headers for requests"
+              },
+              "body": {
+                "type": "object",
+                "description": "Request body content"
+              }
+            }
+          },
+          "credentials": {
+            "type": "object",
+            "description": "Node credentials reference"
+          },
+          "disabled": {
+            "type": "boolean",
+            "description": "Whether the node is disabled"
+          }
+        },
+        "additionalProperties": true
+      }
+    },
+    "connections": {
+      "type": "object",
+      "description": "Workflow connections between nodes",
+      "properties": {
+        "main": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["node", "type", "index"],
+                "properties": {
+                  "node": {
+                    "type": "string",
+                    "description": "Target node name"
+                  },
+                  "type": {
+                    "type": "string",
+                    "description": "Connection type"
+                  },
+                  "index": {
+                    "type": "integer",
+                    "description": "Connection index"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "settings": {
+      "type": "object",
+      "description": "Workflow settings",
+      "properties": {
+        "executionOrder": {
+          "type": "string",
+          "enum": ["v0", "v1"],
+          "description": "Execution order version"
+        },
+        "saveExecutionProgress": {
+          "type": "boolean",
+          "description": "Save execution progress"
+        },
+        "saveManualExecutions": {
+          "type": "boolean",
+          "description": "Save manual executions"
+        },
+        "saveDataErrorExecution": {
+          "type": "string",
+          "enum": ["all", "none"],
+          "description": "Save data on error execution"
+        },
+        "saveDataSuccessExecution": {
+          "type": "string",
+          "enum": ["all", "none"],
+          "description": "Save data on success execution"
+        }
+      }
+    },
+    "staticData": {
+      "type": "object",
+      "description": "Static data for the workflow"
+    },
+    "meta": {
+      "type": "object",
+      "description": "Metadata about the workflow",
+      "properties": {
+        "instanceId": {
+          "type": "string",
+          "description": "Instance identifier"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Creation timestamp"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Last update timestamp"
+        }
+      }
+    },
+    "active": {
+      "type": "boolean",
+      "description": "Whether the workflow is active"
+    },
+    "id": {
+      "type": "string",
+      "description": "Workflow identifier"
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Creation timestamp"
+    },
+    "updatedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Last update timestamp"
+    }
+  },
+  "additionalProperties": true
+}

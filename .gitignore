@@ -1,0 +1,77 @@
+# Environment variables
+.env
+.env.local
+.env.production
+.env.*.local
+!.env.example
+
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Production
+/build
+/dist
+/.vite
+
+# Build outputs
+dist/
+build/
+*.log
+
+# Temporary files
+tmp/*
+!tmp/.gitkeep
+*.tmp
+*.temp
+temp/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# MongoDB
+/mongod.lock
+mongodb-backup/
+*.dump
+
+# Backend specific
+backend/node_modules/
+backend/.env
+backend/npm-debug.log*
+backend/.DS_Store
+backend/tmp/
+
+# Frontend specific
+frontend/node_modules/
+frontend/.vite/
+frontend/dist/
+frontend/npm-debug.log*
+frontend/.DS_Store
+
+# Data files (except version controlled ones)
+data/*.log
+
+# Test and coverage
+/coverage
+*.test.js
+*.spec.js
+
+# Local development files
+*.local
+
+# Docker
+docker-compose.override.yml
+
+# Uploads
+uploads/*
+!uploads/.gitkeep

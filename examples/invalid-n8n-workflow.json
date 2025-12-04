@@ -1,0 +1,42 @@
+{
+  "name": "Invalid Workflow Example",
+  "nodes": [
+    {
+      "id": "1",
+      "type": "n8n-nodes-base.manualTrigger",
+      "name": "Manual Trigger"
+    },
+    {
+      "type": "n8n-nodes-base.httpRequest",
+      "name": "Missing ID Node",
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.example.com/users"
+      }
+    },
+    {
+      "id": "3",
+      "type": "n8n-nodes-base.httpRequest",
+      "parameters": {
+        "method": "POST",
+        "url": "https://internal.system.com/users"
+      }
+    }
+  ],
+  "connections": {
+    "main": [
+      [
+        [
+          {
+            "node": "Missing Type",
+            "index": 0
+          }
+        ]
+      ]
+    ]
+  },
+  "settings": {
+    "executionOrder": "invalidValue",
+    "invalidSetting": "This setting doesn't exist"
+  }
+}

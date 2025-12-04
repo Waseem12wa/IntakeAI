@@ -1,0 +1,29 @@
+{
+  "name": "intakeai",
+  "version": "1.0.0",
+  "description": "IntakeAI - AI-powered project intake and estimation platform",
+  "main": "project-root/backend/server.js",
+  "scripts": {
+    "install-all": "npm install && cd project-root/backend && npm install && cd ../frontend && npm install",
+    "build": "cd project-root/frontend && npm install && npm run build",
+    "start": "cd project-root/backend && npm start",
+    "dev": "concurrently \"cd project-root/backend && npm start\" \"cd project-root/frontend && npm run dev\""
+  },
+  "keywords": [
+    "ai",
+    "project-management",
+    "estimation",
+    "intake"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "concurrently": "^8.2.2",
+    "form-data": "^4.0.4",
+    "node-fetch": "^3.3.2"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  }
+}

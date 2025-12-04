@@ -1,0 +1,4 @@
+project-root/frontend/dist/** filter=lfs diff=lfs merge=lfs -text
+project-root/data/** filter=lfs diff=lfs merge=lfs -text
+data/** filter=lfs diff=lfs merge=lfs -text
+project-root/backend/tmp/** filter=lfs diff=lfs merge=lfs -text

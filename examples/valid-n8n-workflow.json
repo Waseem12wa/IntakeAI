@@ -1,0 +1,85 @@
+{
+  "name": "Sample API Integration Workflow",
+  "nodes": [
+    {
+      "id": "1",
+      "type": "n8n-nodes-base.manualTrigger",
+      "name": "Manual Trigger",
+      "parameters": {},
+      "position": [250, 300]
+    },
+    {
+      "id": "2",
+      "type": "n8n-nodes-base.httpRequest",
+      "name": "Get User Data",
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.example.com/users",
+        "authentication": "bearerToken",
+        "headers": {
+          "Content-Type": "application/json"
+        }
+      },
+      "position": [450, 300],
+      "credentials": {
+        "bearerToken": "userApiCredentials"
+      }
+    },
+    {
+      "id": "3",
+      "type": "n8n-nodes-base.httpRequest",
+      "name": "Create User Record",
+      "parameters": {
+        "method": "POST",
+        "url": "https://internal.system.com/users",
+        "authentication": "basicAuth",
+        "body": {
+          "mode": "json",
+          "json": "{\n  \"name\": \"={{ $json.name }}\",\n  \"email\": \"={{ $json.email }}\"\n}"
+        }
+      },
+      "position": [650, 300],
+      "credentials": {
+        "basicAuth": "internalSystemCredentials"
+      }
+    }
+  ],
+  "connections": {
+    "main": [
+      [
+        [
+          {
+            "node": "Get User Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      [
+        [
+          {
+            "node": "Create User Record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    ]
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveExecutionProgress": true,
+    "saveManualExecutions": true,
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all"
+  },
+  "meta": {
+    "instanceId": "123e4567-e89b-12d3-a456-426614174000",
+    "createdAt": "2023-01-15T10:30:00Z",
+    "updatedAt": "2023-01-15T10:30:00Z"
+  },
+  "active": false,
+  "id": "workflow_001",
+  "createdAt": "2023-01-15T10:30:00Z",
+  "updatedAt": "2023-01-15T10:30:00Z"
+}
