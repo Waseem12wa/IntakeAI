@@ -58,10 +58,7 @@ app.get('/health', (req, res) => {
 });
 
 // Connect to MongoDB
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/intakeai', {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-})
+mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/intakeai')
 .then(() => {
   console.log('Connected to MongoDB');
   
