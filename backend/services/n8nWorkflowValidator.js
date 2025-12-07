@@ -22,6 +22,19 @@ const validate = ajv.compile(n8nSchema);
  * @returns {Object} Validation result with success or error details
  */
 function validateN8nWorkflow(workflowData) {
+  // Check if this looks like a translation key file (pricing database) instead of a workflow
+  if (workflowData && workflowData.node_types && !workflowData.nodes) {
+    return {
+      isValid: false,
+      error: 'INVALID_FILE_TYPE',
+      message: 'This file appears to be a translation key (pricing database) file, not an n8n workflow file. Please upload an n8n workflow JSON file exported from n8n that contains "nodes" and "connections" properties.',
+      details: {
+        path: 'root',
+        reason: 'File structure matches translation key format, not n8n workflow format'
+      }
+    };
+  }
+  
   const valid = validate(workflowData);
   
   if (valid) {
@@ -41,6 +54,14 @@ function validateN8nWorkflow(workflowData) {
       path = firstError.params.missingProperty;
     }
     
+    // Provide more helpful error messages
+    let errorMessage = firstError.message;
+    if (firstError.keyword === 'required' && firstError.params && firstError.params.missingProperty === 'nodes') {
+      errorMessage = 'This file is missing the required "nodes" property. An n8n workflow file must contain a "nodes" array with workflow nodes. This file does not appear to be a valid n8n workflow export.';
+    } else if (firstError.keyword === 'required' && firstError.params && firstError.params.missingProperty === 'connections') {
+      errorMessage = 'This file is missing the required "connections" property. An n8n workflow file must contain a "connections" object. This file does not appear to be a valid n8n workflow export.';
+    }
+    
     switch (firstError.keyword) {
       case 'required':
         reason = `missing required field`;
@@ -58,7 +79,7 @@ function validateN8nWorkflow(workflowData) {
     return {
       isValid: false,
       error: 'INVALID_N8N_SCHEMA',
-      message: `Invalid n8n workflow: ${firstError.message}`,
+      message: `Invalid n8n workflow: ${errorMessage}`,
       details: {
         path: path || 'root',
         reason: reason
