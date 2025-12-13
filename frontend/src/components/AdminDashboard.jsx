@@ -13,7 +13,7 @@ export default function AdminDashboard() {
   const [approvedEstimate, setApprovedEstimate] = useState(null);
   const [loadingEstimate, setLoadingEstimate] = useState(false);
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false); // New state for authentication status
-  
+
   // Estimate approval states
   const [pendingEstimate, setPendingEstimate] = useState(null);
   const [loadingPendingEstimate, setLoadingPendingEstimate] = useState(false);
@@ -30,14 +30,14 @@ export default function AdminDashboard() {
   const [calculatedPrice, setCalculatedPrice] = useState('');
   const [finalApprovalReady, setFinalApprovalReady] = useState(false);
   const [processing, setProcessing] = useState(false);
-  
+
   const { showGeneralNotification, showN8nApprovalNotification } = useNotification();
-  
+
   const [pendingN8nReviews, setPendingN8nReviews] = useState([]);
   const [showN8nPriceModal, setShowN8nPriceModal] = useState(false);
   const [selectedN8nReview, setSelectedN8nReview] = useState(null);
   const [n8nPrice, setN8nPrice] = useState('');
-  
+
   // Fetch pending n8n quote reviews
   const fetchPendingN8nReviews = async () => {
     try {
@@ -55,7 +55,7 @@ export default function AdminDashboard() {
       console.error('Error fetching pending n8n reviews:', err);
     }
   };
-  
+
   // Handle n8n quote approval
   const handleN8nQuoteApproval = async (queueId, price, nodePrices = null) => {
     try {
@@ -65,12 +65,12 @@ export default function AdminDashboard() {
         price: price,
         notes: `Price set by admin: $${price}`
       };
-      
+
       // Add node prices if provided
       if (nodePrices) {
         requestBody.nodePrices = nodePrices;
       }
-      
+
       const response = await fetch('/api/n8n-quote/approve-with-price', {
         method: 'POST',
         headers: {
@@ -78,7 +78,7 @@ export default function AdminDashboard() {
         },
         body: JSON.stringify(requestBody)
       });
-      
+
       if (response.ok) {
         const result = await response.json();
         // Update the approved estimate with the complete data
@@ -96,14 +96,14 @@ export default function AdminDashboard() {
           'n8n quote modification approved and price set!',
           'success'
         );
-        
+
         // Show notification to user with project name BEFORE resetting state
         // Try multiple possible locations for the workflow name
-        const projectName = selectedN8nReview?.original_request?.workflow || 
-                           selectedN8nReview?.original_request?.fileName || 
-                           selectedN8nReview?.original_request?.filename || 
-                           selectedN8nReview?.original_request?.file_name ||
-                           'n8n Workflow';
+        const projectName = selectedN8nReview?.original_request?.workflow ||
+          selectedN8nReview?.original_request?.fileName ||
+          selectedN8nReview?.original_request?.filename ||
+          selectedN8nReview?.original_request?.file_name ||
+          'n8n Workflow';
         showN8nApprovalNotification(projectName, queueId);
       } else {
         const text = await response.text();
@@ -125,14 +125,14 @@ export default function AdminDashboard() {
       );
     }
   };
-  
+
   // Load projects and pending reviews when token is set
   useEffect(() => {
     if (isAdminAuthenticated) {
       fetchPendingN8nReviews();
     }
   }, [isAdminAuthenticated]);
-  
+
   const handleLoad = async () => {
     setLoading(true);
     setError(null);
@@ -162,7 +162,9 @@ export default function AdminDashboard() {
     }
     setLoading(false);
   };
-  
+
+
+
   // Fetch pending estimate for selected job
   const fetchPendingEstimate = async (jobId) => {
     setLoadingPendingEstimate(true);
@@ -173,14 +175,14 @@ export default function AdminDashboard() {
           'x-admin-token': token
         }
       });
-      
+
       if (res.ok) {
         const text = await res.text();
         if (text) {
           const data = JSON.parse(text);
           if (data.success) {
             // Find pending estimate for this specific job
-            const jobEstimate = data.estimates.find(est => 
+            const jobEstimate = data.estimates.find(est =>
               est.jobId && (est.jobId._id === jobId || est.jobId === jobId)
             );
             setPendingEstimate(jobEstimate || null);
@@ -191,7 +193,7 @@ export default function AdminDashboard() {
       } else {
         setPendingEstimate(null);
       }
-      
+
       // Also check for n8n quote pending reviews
       const n8nRes = await fetch('/api/n8n-quote/pending-reviews');
       if (n8nRes.ok) {
@@ -210,7 +212,7 @@ export default function AdminDashboard() {
       setLoadingPendingEstimate(false);
     }
   };
-  
+
   // Calculate price using the formula
   const calculatePrice = () => {
     const {
@@ -238,7 +240,7 @@ export default function AdminDashboard() {
     setCalculatedPrice(finalPrice.toFixed(2));
     setError(null); // Clear any previous errors
   };
-  
+
   // Handle final approval with calculated price
   const handleFinalApproval = async (estimate) => {
     if (!calculatedPrice) {
@@ -249,7 +251,7 @@ export default function AdminDashboard() {
     try {
       setProcessing(true);
       setError(null);
-      
+
       const requestBody = {
         adminNotes: `Price calculated using admin formula: $${calculatedPrice}`,
         calculatedPrice: calculatedPrice,
@@ -263,7 +265,7 @@ export default function AdminDashboard() {
           discounts: priceInputs.discounts || '0'
         }
       };
-      
+
       const response = await fetch(`/api/estimates/admin/${estimate._id}/approve`, {
         method: 'POST',
         headers: {
@@ -272,7 +274,7 @@ export default function AdminDashboard() {
         },
         body: JSON.stringify(requestBody)
       });
-      
+
       if (!response.ok) {
         const errorText = await response.text();
         throw new Error(`Failed to approve estimate: ${response.status} - ${errorText}`);
@@ -285,7 +287,7 @@ export default function AdminDashboard() {
         setApprovedEstimate(data.estimate);
         // Clear pending estimate
         setPendingEstimate(null);
-        
+
         // Show success notification
         const estimateInfo = estimate.jobId?.title || 'Unknown Project';
         showGeneralNotification(
@@ -293,7 +295,7 @@ export default function AdminDashboard() {
           'success',
           estimate.jobId?._id || estimate.jobId
         );
-        
+
         // Reset calculator state
         setShowPriceCalculator(false);
         setCalculatedPrice('');
@@ -316,10 +318,10 @@ export default function AdminDashboard() {
       setProcessing(false);
     }
   };
-  
+
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString() + ' ' + 
-         new Date(dateString).toLocaleTimeString();
+    return new Date(dateString).toLocaleDateString() + ' ' +
+      new Date(dateString).toLocaleTimeString();
   };
 
   // Fetch approved estimate for selected job
@@ -329,7 +331,7 @@ export default function AdminDashboard() {
       console.log('Fetching approved estimate for jobId:', jobId);
       const res = await fetch(`/api/estimates/approved/${jobId}`);
       console.log('API response status:', res.status);
-      
+
       if (res.ok) {
         const text = await res.text();
         if (text) {
@@ -356,7 +358,7 @@ export default function AdminDashboard() {
   const generateProjectPDF = () => {
     console.log('PDF Generation - Selected job:', selected);
     console.log('PDF Generation - Approved estimate:', approvedEstimate);
-    
+
     if (!selected || !approvedEstimate) {
       console.error('PDF Generation failed - Missing data:', {
         selected: !!selected,
@@ -382,7 +384,7 @@ export default function AdminDashboard() {
           doc.setFont(undefined, 'normal');
         }
         doc.setTextColor(color);
-        
+
         const lines = doc.splitTextToSize(text, maxWidth);
         lines.forEach((line) => {
           if (yPosition > 280) { // Near bottom of page
@@ -415,34 +417,34 @@ export default function AdminDashboard() {
       yPosition += 5;
       addText('Project Description:');
       addText(selected.description);
-      
+
       if (selected.skills && selected.skills.length > 0) {
         yPosition += 5;
         addText('Required Skills:');
         addText(selected.skills.join(', '));
       }
-      
+
       // Add AI Analysis if available - only show the AI estimate
       if (approvedEstimate.aiAnalysis && approvedEstimate.originalEstimate) {
         yPosition += 10;
         addText('AI ANALYSIS SUMMARY', 14, true, '#1976d2');
         addText(`AI Estimate: ${approvedEstimate.originalEstimate}`);
       }
-      
+
       yPosition += 15;
 
       // Pricing Breakdown
       addText('PRICING BREAKDOWN', 16, true, '#1976d2');
       yPosition += 5;
-      
+
       if (approvedEstimate.calculatedPrice) {
         addText(`Final Approved Price: $${approvedEstimate.calculatedPrice}`, 14, true, '#059669');
         yPosition += 5;
-        
+
         if (approvedEstimate.priceBreakdown) {
           addText('Price Calculation Details:', 12, true);
           const breakdown = approvedEstimate.priceBreakdown;
-          
+
           if (breakdown.estimatedWorkHours) {
             addText(`• Estimated Work Hours: ${breakdown.estimatedWorkHours}`);
           }
@@ -452,14 +454,14 @@ export default function AdminDashboard() {
           if (breakdown.complexityFactor) {
             addText(`• Complexity Factor: ${breakdown.complexityFactor}x`);
           }
-          
-          const basePrice = parseFloat(breakdown.estimatedWorkHours || 0) * 
-                     parseFloat(breakdown.hourlyRate || 0) * 
-                     parseFloat(breakdown.complexityFactor || 1);
+
+          const basePrice = parseFloat(breakdown.estimatedWorkHours || 0) *
+            parseFloat(breakdown.hourlyRate || 0) *
+            parseFloat(breakdown.complexityFactor || 1);
           if (basePrice > 0) {
             addText(`• Base Price: $${basePrice.toFixed(2)}`);
           }
-          
+
           if (breakdown.adminFee && parseFloat(breakdown.adminFee) > 0) {
             addText(`• Admin Fee: $${breakdown.adminFee}`);
           }
@@ -472,39 +474,39 @@ export default function AdminDashboard() {
           if (breakdown.discounts && parseFloat(breakdown.discounts) > 0) {
             addText(`• Discounts: -$${breakdown.discounts}`);
           }
-          
+
           yPosition += 5;
           addText('Formula: (Hours × Rate × Complexity) + Fees + Commission + Surcharges - Discounts', 10, false, '#666666');
         }
       } else {
         addText(`Original AI Estimate: ${approvedEstimate.originalEstimate}`, 14, true, '#059669');
       }
-      
+
       // Add workflow data if available (for n8n quotes)
       if (approvedEstimate.workflowData) {
         yPosition += 15;
         addText('WORKFLOW DETAILS', 16, true, '#1976d2');
         yPosition += 5;
-        
+
         if (approvedEstimate.workflowData.modifications) {
           addText('Custom Modifications Requested:');
           addText(approvedEstimate.workflowData.modifications);
           yPosition += 10;
         }
-        
+
         if (approvedEstimate.workflowData.workflow) {
           addText('Workflow File:');
           addText(approvedEstimate.workflowData.workflow);
           yPosition += 10;
         }
       }
-      
+
       if (approvedEstimate.adminNotes) {
         yPosition += 10;
         addText('Admin Notes:', 12, true);
         addText(approvedEstimate.adminNotes);
       }
-      
+
       yPosition += 15;
       addText('This document serves as the official project specification and pricing agreement.', 10, false, '#666666');
 
@@ -527,14 +529,14 @@ export default function AdminDashboard() {
       fontFamily: "'Google Sans', 'Roboto', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif"
     }}>
       {/* Main Content Container */}
-      <div style={{ 
-        maxWidth: '1000px', 
+      <div style={{
+        maxWidth: '1000px',
         margin: '0 auto'
       }}>
-        
+
         {/* Header Section */}
-        <div style={{ 
-          textAlign: 'center', 
+        <div style={{
+          textAlign: 'center',
           marginBottom: '40px',
           padding: '30px 0'
         }}>
@@ -551,16 +553,16 @@ export default function AdminDashboard() {
           }}>
             <span style={{ fontSize: '28px' }}>⚙️</span>
           </div>
-          <h1 style={{ 
-            fontSize: '2.5rem', 
-            fontWeight: 700, 
+          <h1 style={{
+            fontSize: '2.5rem',
+            fontWeight: 700,
             color: '#343541',
             margin: '0 0 12px 0'
           }}>
             Admin Dashboard
           </h1>
-          <p style={{ 
-            fontSize: '1.1rem', 
+          <p style={{
+            fontSize: '1.1rem',
             color: '#6b7280',
             maxWidth: '600px',
             margin: '0 auto'
@@ -577,7 +579,7 @@ export default function AdminDashboard() {
           border: '1px solid #e5e5e5',
           padding: '24px'
         }}>
-          
+
           {/* Authentication Section */}
           <div style={{
             background: '#f8f9fa',
@@ -594,9 +596,9 @@ export default function AdminDashboard() {
             }}>
               🔐 Admin Authentication
             </h3>
-            <div style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
               gap: '16px',
               flexWrap: 'wrap'
             }}>
@@ -666,8 +668,8 @@ export default function AdminDashboard() {
               </button>
             </div>
             {error && (
-              <div style={{ 
-                color: '#dc2626', 
+              <div style={{
+                color: '#dc2626',
                 marginTop: '16px',
                 padding: '12px 16px',
                 background: '#fee2e2',
@@ -718,9 +720,9 @@ export default function AdminDashboard() {
               }}>
                 🔄 n8n Quote Reviews
               </h3>
-              
+
               {pendingN8nReviews.length > 0 ? (
-                <div style={{ 
+                <div style={{
                   display: 'flex',
                   flexDirection: 'column',
                   gap: '12px'
@@ -732,29 +734,29 @@ export default function AdminDashboard() {
                       padding: '16px',
                       border: '1px solid #e5e5e5'
                     }}>
-                      <div style={{ 
-                        display: 'flex', 
-                        justifyContent: 'space-between', 
+                      <div style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
                         alignItems: 'center',
                         marginBottom: '12px'
                       }}>
                         <div>
-                          <div style={{ 
-                            fontWeight: 600, 
+                          <div style={{
+                            fontWeight: 600,
                             color: '#343541',
                             marginBottom: '4px'
                           }}>
                             Custom Modification Request
                           </div>
-                          <div style={{ 
-                            fontSize: '14px', 
+                          <div style={{
+                            fontSize: '14px',
                             color: '#6b7280'
                           }}>
                             Queue ID: {review.queue_id}
                           </div>
                         </div>
-                        <div style={{ 
-                          fontSize: '12px', 
+                        <div style={{
+                          fontSize: '12px',
                           color: '#9ca3af',
                           background: '#f3f4f6',
                           padding: '4px 8px',
@@ -763,40 +765,40 @@ export default function AdminDashboard() {
                           {formatDate(review.created_at)}
                         </div>
                       </div>
-                      
-                      <div style={{ 
+
+                      <div style={{
                         marginBottom: '16px',
                         fontSize: '14px',
                         color: '#343541'
                       }}>
-                        <div style={{ 
-                          fontWeight: 500, 
-                          marginBottom: '4px' 
+                        <div style={{
+                          fontWeight: 500,
+                          marginBottom: '4px'
                         }}>
                           Modifications:
                         </div>
                         <div>
                           {review.original_request?.modifications || 'No details provided'}
                         </div>
-                                                  
+
                         {/* Display nodes requiring pricing if available */}
                         {review.generated_quote?.items && review.generated_quote.items.length > 0 && (
                           <div style={{ marginTop: '12px' }}>
-                            <div style={{ 
-                              fontWeight: 500, 
-                              marginBottom: '4px' 
+                            <div style={{
+                              fontWeight: 500,
+                              marginBottom: '4px'
                             }}>
                               Nodes Requiring Pricing:
                             </div>
-                            <div style={{ 
-                              maxHeight: '150px', 
+                            <div style={{
+                              maxHeight: '150px',
                               overflowY: 'auto',
                               border: '1px solid #e5e5e5',
                               borderRadius: '4px',
                               padding: '8px'
                             }}>
                               {review.generated_quote.items.map((item, index) => (
-                                <div key={index} style={{ 
+                                <div key={index} style={{
                                   padding: '4px 0',
                                   borderBottom: index < review.generated_quote.items.length - 1 ? '1px solid #f0f0f0' : 'none'
                                 }}>
@@ -806,8 +808,8 @@ export default function AdminDashboard() {
                                     {item.base_price === 0 ? 'Price not set (requires manual pricing)' : `$${item.base_price.toFixed(2)}`}
                                   </span>
                                   {item.requires_manual_review && (
-                                    <span style={{ 
-                                      background: '#fef3c7', 
+                                    <span style={{
+                                      background: '#fef3c7',
                                       color: '#92400e',
                                       fontSize: '10px',
                                       padding: '2px 4px',
@@ -823,9 +825,9 @@ export default function AdminDashboard() {
                           </div>
                         )}
                       </div>
-                      
-                      <div style={{ 
-                        display: 'flex', 
+
+                      <div style={{
+                        display: 'flex',
                         justifyContent: 'flex-end'
                       }}>
                         <button
@@ -858,8 +860,8 @@ export default function AdminDashboard() {
                   ))}
                 </div>
               ) : (
-                <div style={{ 
-                  color: '#9ca3af', 
+                <div style={{
+                  color: '#9ca3af',
                   textAlign: 'center',
                   padding: '20px',
                   fontStyle: 'italic'
@@ -872,7 +874,7 @@ export default function AdminDashboard() {
 
           {/* Dashboard Content */}
           <div style={{ display: 'flex', gap: '24px', minHeight: '400px' }}>
-            
+
             {/* Projects List */}
             <div style={{ flex: 1, minWidth: '280px' }}>
               <div style={{
@@ -881,22 +883,22 @@ export default function AdminDashboard() {
                 padding: '20px',
                 border: '1px solid #e5e5e5'
               }}>
-                <h3 style={{ 
-                  color: '#343541', 
-                  fontWeight: 600, 
+                <h3 style={{
+                  color: '#343541',
+                  fontWeight: 600,
                   marginBottom: '16px',
                   fontSize: '1.1rem'
                 }}>
                   💼 Projects ({projects.length})
                 </h3>
-                <div style={{ 
+                <div style={{
                   display: 'flex',
                   flexDirection: 'column',
                   gap: '8px'
                 }}>
                   {projects.length === 0 && (
-                    <div style={{ 
-                      color: '#9ca3af', 
+                    <div style={{
+                      color: '#9ca3af',
                       textAlign: 'center',
                       padding: '40px 20px',
                       fontStyle: 'italic'
@@ -932,11 +934,16 @@ export default function AdminDashboard() {
                         }
                       }}
                     >
-                      <div style={{ fontWeight: 600, marginBottom: '4px' }}>
+                      <div style={{
+                        fontWeight: 600,
+                        marginBottom: '4px',
+                        wordBreak: 'break-word',
+                        overflowWrap: 'break-word'
+                      }}>
                         {j.title} - {j.company}
                       </div>
-                      <div style={{ 
-                        color: selected && selected._id === j._id ? '#0288d1' : '#6b7280', 
+                      <div style={{
+                        color: selected && selected._id === j._id ? '#0288d1' : '#6b7280',
                         fontSize: '12px'
                       }}>
                         {new Date(j.postedAt).toLocaleString()}
@@ -950,28 +957,28 @@ export default function AdminDashboard() {
             {/* Project Details */}
             <div style={{ flex: 2, minWidth: '400px' }}>
               {selected ? (
-                <div style={{ 
+                <div style={{
                   background: '#f8f9fa',
                   borderRadius: '12px',
                   padding: '24px',
                   border: '1px solid #e5e5e5'
                 }}>
-                  <h3 style={{ 
-                    color: '#343541', 
+                  <h3 style={{
+                    color: '#343541',
                     fontWeight: 600,
                     marginBottom: '20px',
                     fontSize: '1.25rem'
                   }}>
                     💼 Project Details
                   </h3>
-                  
+
                   {/* Project Data */}
-                  <div style={{ 
-                    background: '#ffffff', 
-                    color: '#343541', 
-                    padding: '20px', 
-                    borderRadius: '8px', 
-                    fontSize: '14px', 
+                  <div style={{
+                    background: '#ffffff',
+                    color: '#343541',
+                    padding: '20px',
+                    borderRadius: '8px',
+                    fontSize: '14px',
                     marginBottom: '24px',
                     border: '1px solid #e5e5e5',
                     whiteSpace: 'pre-wrap',
@@ -1005,11 +1012,11 @@ export default function AdminDashboard() {
                     }}>
                       📄 Project Document
                     </h4>
-                    
+
                     {loadingEstimate ? (
-                      <div style={{ 
-                        display: 'flex', 
-                        alignItems: 'center', 
+                      <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
                         gap: '8px',
                         color: '#10a37f',
                         fontWeight: 500
@@ -1063,7 +1070,7 @@ export default function AdminDashboard() {
                             </div>
                           )}
                         </div>
-                        
+
                         <div style={{ display: 'flex', gap: '10px' }}>
                           <button
                             onClick={generateProjectPDF}
@@ -1089,7 +1096,7 @@ export default function AdminDashboard() {
                           >
                             📥 Download Project PDF
                           </button>
-                          
+
                           <button
                             onClick={() => {
                               console.log('=== DEBUG DATA ===');
@@ -1134,480 +1141,8 @@ export default function AdminDashboard() {
                       </div>
                     )}
                   </div>
-                
-                {/* Estimate Approval Section - Inline */}
-                <div style={{
-                  background: '#ffffff',
-                  borderRadius: '8px',
-                  padding: '20px',
-                  border: '1px solid #e5e5e5',
-                  marginBottom: '20px'
-                }}>
-                  <h4 style={{
-                    color: '#343541',
-                    fontWeight: 600,
-                    marginBottom: '16px',
-                    fontSize: '16px'
-                  }}>
-                    ⚙️ Estimate Management
-                  </h4>
-                  
-                  {loadingPendingEstimate ? (
-                    <div style={{ 
-                      display: 'flex', 
-                      alignItems: 'center', 
-                      gap: '8px',
-                      color: '#10a37f',
-                      fontWeight: 500
-                    }}>
-                      <div style={{
-                        width: '16px',
-                        height: '16px',
-                        border: '2px solid #10a37f',
-                        borderTop: '2px solid transparent',
-                        borderRadius: '50%',
-                        animation: 'spin 1s linear infinite'
-                      }}></div>
-                      Loading estimate data...
-                    </div>
-                  ) : pendingEstimate ? (
-                    <div>
-                      {/* Price Calculator Section */}
-                      {showPriceCalculator ? (
-                        <div style={{
-                          background: '#f0fdf4',
-                          border: '1px solid #bbf7d0',
-                          borderRadius: '8px',
-                          padding: '20px',
-                          marginBottom: '16px'
-                        }}>
-                          <div style={{ display: 'flex', alignItems: 'center', marginBottom: '16px' }}>
-                            <div style={{
-                              width: '32px',
-                              height: '32px',
-                              background: '#10b981',
-                              borderRadius: '8px',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              marginRight: '12px'
-                            }}>
-                              <span style={{ color: 'white', fontSize: '16px' }}>💰</span>
-                            </div>
-                            <h4 style={{ fontWeight: 'bold', color: '#343541', fontSize: '16px', margin: 0 }}>Admin Price Calculator</h4>
-                          </div>
-                          
-                          {/* Input Grid */}
-                          <div style={{
-                            display: 'grid',
-                            gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-                            gap: '12px',
-                            marginBottom: '16px'
-                          }}>
-                            <div>
-                              <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#343541', marginBottom: '4px' }}>Estimated Work Hours</label>
-                              <input
-                                type="number"
-                                value={priceInputs.estimatedWorkHours}
-                                onChange={(e) => setPriceInputs(prev => ({ ...prev, estimatedWorkHours: e.target.value }))}
-                                style={{
-                                  width: '100%',
-                                  padding: '8px 12px',
-                                  borderRadius: '6px',
-                                  border: '1px solid #e5e5e5',
-                                  fontSize: '14px',
-                                  boxSizing: 'border-box'
-                                }}
-                                placeholder="e.g., 40"
-                              />
-                            </div>
-                            <div>
-                              <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#343541', marginBottom: '4px' }}>Hourly Rate ($)</label>
-                              <input
-                                type="number"
-                                value={priceInputs.hourlyRate}
-                                onChange={(e) => setPriceInputs(prev => ({ ...prev, hourlyRate: e.target.value }))}
-                                style={{
-                                  width: '100%',
-                                  padding: '8px 12px',
-                                  borderRadius: '6px',
-                                  border: '1px solid #e5e5e5',
-                                  fontSize: '14px',
-                                  boxSizing: 'border-box'
-                                }}
-                                placeholder="e.g., 75"
-                              />
-                            </div>
-                            <div>
-                              <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#343541', marginBottom: '4px' }}>Complexity Factor</label>
-                              <select
-                                value={priceInputs.complexityFactor}
-                                onChange={(e) => setPriceInputs(prev => ({ ...prev, complexityFactor: e.target.value }))}
-                                style={{
-                                  width: '100%',
-                                  padding: '8px 12px',
-                                  borderRadius: '6px',
-                                  border: '1px solid #e5e5e5',
-                                  fontSize: '14px',
-                                  boxSizing: 'border-box'
-                                }}
-                              >
-                                <option value="0.8">Simple (0.8x)</option>
-                                <option value="1">Standard (1.0x)</option>
-                                <option value="1.2">Complex (1.2x)</option>
-                                <option value="1.5">Very Complex (1.5x)</option>
-                              </select>
-                            </div>
-                            <div>
-                              <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#343541', marginBottom: '4px' }}>Admin Fee ($)</label>
-                              <input
-                                type="number"
-                                value={priceInputs.adminFee}
-                                onChange={(e) => setPriceInputs(prev => ({ ...prev, adminFee: e.target.value }))}
-                                style={{
-                                  width: '100%',
-                                  padding: '8px 12px',
-                                  borderRadius: '6px',
-                                  border: '1px solid #e5e5e5',
-                                  fontSize: '14px',
-                                  boxSizing: 'border-box'
-                                }}
-                                placeholder="e.g., 500"
-                              />
-                            </div>
-                            <div>
-                              <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#343541', marginBottom: '4px' }}>Commission ($)</label>
-                              <input
-                                type="number"
-                                value={priceInputs.commission}
-                                onChange={(e) => setPriceInputs(prev => ({ ...prev, commission: e.target.value }))}
-                                style={{
-                                  width: '100%',
-                                  padding: '8px 12px',
-                                  borderRadius: '6px',
-                                  border: '1px solid #e5e5e5',
-                                  fontSize: '14px',
-                                  boxSizing: 'border-box'
-                                }}
-                                placeholder="e.g., 200"
-                              />
-                            </div>
-                            <div>
-                              <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#343541', marginBottom: '4px' }}>Surcharges ($)</label>
-                              <input
-                                type="number"
-                                value={priceInputs.surcharges}
-                                onChange={(e) => setPriceInputs(prev => ({ ...prev, surcharges: e.target.value }))}
-                                style={{
-                                  width: '100%',
-                                  padding: '8px 12px',
-                                  borderRadius: '6px',
-                                  border: '1px solid #e5e5e5',
-                                  fontSize: '14px',
-                                  boxSizing: 'border-box'
-                                }}
-                                placeholder="e.g., 100"
-                              />
-                            </div>
-                            <div>
-                              <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#343541', marginBottom: '4px' }}>Discounts ($)</label>
-                              <input
-                                type="number"
-                                value={priceInputs.discounts}
-                                onChange={(e) => setPriceInputs(prev => ({ ...prev, discounts: e.target.value }))}
-                                style={{
-                                  width: '100%',
-                                  padding: '8px 12px',
-                                  borderRadius: '6px',
-                                  border: '1px solid #e5e5e5',
-                                  fontSize: '14px',
-                                  boxSizing: 'border-box'
-                                }}
-                                placeholder="e.g., 50"
-                              />
-                            </div>
-                          </div>
-                          
-                          {/* Calculate Button */}
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <button
-                              onClick={calculatePrice}
-                              disabled={!priceInputs.estimatedWorkHours || !priceInputs.hourlyRate}
-                              style={{
-                                background: (!priceInputs.estimatedWorkHours || !priceInputs.hourlyRate) ? '#e5e7eb' : '#10b981',
-                                color: (!priceInputs.estimatedWorkHours || !priceInputs.hourlyRate) ? '#9ca3af' : '#ffffff',
-                                border: 'none',
-                                borderRadius: '6px',
-                                padding: '10px 20px',
-                                fontWeight: 600,
-                                fontSize: '14px',
-                                cursor: (!priceInputs.estimatedWorkHours || !priceInputs.hourlyRate) ? 'not-allowed' : 'pointer',
-                                transition: 'all 0.2s ease'
-                              }}
-                              onMouseEnter={(e) => {
-                                if (priceInputs.estimatedWorkHours && priceInputs.hourlyRate) {
-                                  e.target.style.background = '#059669';
-                                }
-                              }}
-                              onMouseLeave={(e) => {
-                                if (priceInputs.estimatedWorkHours && priceInputs.hourlyRate) {
-                                  e.target.style.background = '#10b981';
-                                }
-                              }}
-                            >
-                              Calculate Price
-                            </button>
-                            
-                            {calculatedPrice && (
-                              <div style={{ 
-                                fontSize: '18px', 
-                                fontWeight: 'bold', 
-                                color: '#059669' 
-                              }}>
-                                Calculated Price: ${calculatedPrice}
-                              </div>
-                            )}
-                          </div>
-                          
-                          {/* Action Buttons */}
-                          <div style={{ 
-                            display: 'flex', 
-                            justifyContent: 'flex-end', 
-                            gap: '12px', 
-                            marginTop: '20px' 
-                          }}>
-                            <button
-                              onClick={() => setShowPriceCalculator(false)}
-                              style={{
-                                background: '#f3f4f6',
-                                color: '#374151',
-                                border: '1px solid #d1d5db',
-                                borderRadius: '6px',
-                                padding: '10px 20px',
-                                fontWeight: 500,
-                                fontSize: '14px',
-                                cursor: 'pointer',
-                                transition: 'all 0.2s ease'
-                              }}
-                              onMouseEnter={(e) => {
-                                e.target.style.background = '#e5e7eb';
-                              }}
-                              onMouseLeave={(e) => {
-                                e.target.style.background = '#f3f4f6';
-                              }}
-                            >
-                              Cancel
-                            </button>
-                            
-                            <button
-                              onClick={() => {
-                                if (calculatedPrice) {
-                                  setFinalApprovalReady(true);
-                                }
-                              }}
-                              disabled={!calculatedPrice}
-                              style={{
-                                background: !calculatedPrice ? '#e5e7eb' : '#3b82f6',
-                                color: !calculatedPrice ? '#9ca3af' : '#ffffff',
-                                border: 'none',
-                                borderRadius: '6px',
-                                padding: '10px 20px',
-                                fontWeight: 600,
-                                fontSize: '14px',
-                                cursor: !calculatedPrice ? 'not-allowed' : 'pointer',
-                                transition: 'all 0.2s ease'
-                              }}
-                              onMouseEnter={(e) => {
-                                if (calculatedPrice) {
-                                  e.target.style.background = '#2563eb';
-                                }
-                              }}
-                              onMouseLeave={(e) => {
-                                if (calculatedPrice) {
-                                  e.target.style.background = '#3b82f6';
-                                }
-                              }}
-                            >
-                              Set Price & Approve
-                            </button>
-                          </div>
-                        </div>
-                      ) : finalApprovalReady ? (
-                        <div style={{
-                          background: '#eff6ff',
-                          border: '1px solid #bfdbfe',
-                          borderRadius: '8px',
-                          padding: '20px',
-                          marginBottom: '16px'
-                        }}>
-                          <div style={{ display: 'flex', alignItems: 'center', marginBottom: '16px' }}>
-                            <div style={{
-                              width: '32px',
-                              height: '32px',
-                              background: '#3b82f6',
-                              borderRadius: '8px',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              marginRight: '12px'
-                            }}>
-                              <span style={{ color: 'white', fontSize: '16px' }}>✅</span>
-                            </div>
-                            <h4 style={{ fontWeight: 'bold', color: '#343541', fontSize: '16px', margin: 0 }}>Confirm Approval</h4>
-                          </div>
-                          
-                          <p style={{ color: '#374151', marginBottom: '16px' }}>
-                            You are about to approve this estimate with a final price of <strong>${calculatedPrice}</strong>. 
-                            This action cannot be undone.
-                          </p>
-                          
-                          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
-                            <button
-                              onClick={() => setFinalApprovalReady(false)}
-                              disabled={processing}
-                              style={{
-                                background: '#f3f4f6',
-                                color: '#374151',
-                                border: '1px solid #d1d5db',
-                                borderRadius: '6px',
-                                padding: '10px 20px',
-                                fontWeight: 500,
-                                fontSize: '14px',
-                                cursor: processing ? 'not-allowed' : 'pointer',
-                                transition: 'all 0.2s ease'
-                              }}
-                              onMouseEnter={(e) => {
-                                if (!processing) {
-                                  e.target.style.background = '#e5e7eb';
-                                }
-                              }}
-                              onMouseLeave={(e) => {
-                                if (!processing) {
-                                  e.target.style.background = '#f3f4f6';
-                                }
-                              }}
-                            >
-                              Cancel
-                            </button>
-                            
-                            <button
-                              onClick={() => handleFinalApproval(pendingEstimate)}
-                              disabled={processing}
-                              style={{
-                                background: processing ? '#93c5fd' : '#3b82f6',
-                                color: '#ffffff',
-                                border: 'none',
-                                borderRadius: '6px',
-                                padding: '10px 20px',
-                                fontWeight: 600,
-                                fontSize: '14px',
-                                cursor: processing ? 'not-allowed' : 'pointer',
-                                transition: 'all 0.2s ease',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '8px'
-                              }}
-                              onMouseEnter={(e) => {
-                                if (!processing) {
-                                  e.target.style.background = '#2563eb';
-                                }
-                              }}
-                              onMouseLeave={(e) => {
-                                if (!processing) {
-                                  e.target.style.background = '#3b82f6';
-                                }
-                              }}
-                            >
-                              {processing ? (
-                                <>
-                                  <div style={{
-                                    width: '16px',
-                                    height: '16px',
-                                    border: '2px solid #ffffff',
-                                    borderTop: '2px solid transparent',
-                                    borderRadius: '50%',
-                                    animation: 'spin 1s linear infinite'
-                                  }}></div>
-                                  Processing...
-                                </>
-                              ) : (
-                                'Confirm Approval'
-                              )}
-                            </button>
-                          </div>
-                        </div>
-                      ) : (
-                        <div style={{
-                          background: '#fffbeb',
-                          border: '1px solid #fde68a',
-                          borderRadius: '8px',
-                          padding: '20px',
-                          marginBottom: '16px'
-                        }}>
-                          <div style={{ display: 'flex', alignItems: 'center', marginBottom: '16px' }}>
-                            <div style={{
-                              width: '32px',
-                              height: '32px',
-                              background: '#f59e0b',
-                              borderRadius: '8px',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              marginRight: '12px'
-                            }}>
-                              <span style={{ color: 'white', fontSize: '16px' }}>⚠️</span>
-                            </div>
-                            <h4 style={{ fontWeight: 'bold', color: '#343541', fontSize: '16px', margin: 0 }}>Pending Estimate Approval</h4>
-                          </div>
-                          
-                          <p style={{ color: '#374151', marginBottom: '16px' }}>
-                            This project has a pending estimate that requires your approval. 
-                            You can calculate a custom price using our pricing calculator.
-                          </p>
-                          
-                          <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                            <button
-                              onClick={() => setShowPriceCalculator(true)}
-                              style={{
-                                background: '#f59e0b',
-                                color: '#ffffff',
-                                border: 'none',
-                                borderRadius: '6px',
-                                padding: '10px 20px',
-                                fontWeight: 600,
-                                fontSize: '14px',
-                                cursor: 'pointer',
-                                transition: 'all 0.2s ease'
-                              }}
-                              onMouseEnter={(e) => {
-                                e.target.style.background = '#d97706';
-                              }}
-                              onMouseLeave={(e) => {
-                                e.target.style.background = '#f59e0b';
-                              }}
-                            >
-                              Open Price Calculator
-                            </button>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <div style={{
-                      background: '#f3f4f6',
-                      border: '1px solid #e5e5e5',
-                      borderRadius: '8px',
-                      padding: '20px',
-                      textAlign: 'center',
-                      color: '#6b7280'
-                    }}>
-                      No pending estimates for this project.
-                    </div>
-                  )}
-                </div>
 
-                {/* n8n Quote Reviews Section - ADDED HERE */}
-                {isAdminAuthenticated && selected && selected._id && selected._id.startsWith('n8n-') && pendingN8nReviews && pendingN8nReviews.length > 0 && (
+                  {/* Estimate Approval Section - Inline */}
                   <div style={{
                     background: '#ffffff',
                     borderRadius: '8px',
@@ -1621,158 +1156,630 @@ export default function AdminDashboard() {
                       marginBottom: '16px',
                       fontSize: '16px'
                     }}>
-                      🔄 n8n Custom Modifications
+                      ⚙️ Estimate Management
                     </h4>
-                    
-                    {/* Extract queue ID from project ID (format: n8n-{queue_id}) */}
-                    {(() => {
-                      const queueId = selected._id.substring(4); // Remove "n8n-" prefix
-                      const relevantReview = pendingN8nReviews.find(review => review.queue_id === queueId);
-                      
-                      return relevantReview ? (
-                        <div key={relevantReview.queue_id} style={{
-                          background: '#f8f9fa',
-                          borderRadius: '8px',
-                          padding: '16px',
-                          border: '1px solid #e5e5e5'
-                        }}>
-                          <div style={{ 
-                            display: 'flex', 
-                            justifyContent: 'space-between', 
-                            alignItems: 'center',
-                            marginBottom: '12px'
+
+                    {loadingPendingEstimate ? (
+                      <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        color: '#10a37f',
+                        fontWeight: 500
+                      }}>
+                        <div style={{
+                          width: '16px',
+                          height: '16px',
+                          border: '2px solid #10a37f',
+                          borderTop: '2px solid transparent',
+                          borderRadius: '50%',
+                          animation: 'spin 1s linear infinite'
+                        }}></div>
+                        Loading estimate data...
+                      </div>
+                    ) : pendingEstimate ? (
+                      <div>
+                        {/* Price Calculator Section */}
+                        {showPriceCalculator ? (
+                          <div style={{
+                            background: '#f0fdf4',
+                            border: '1px solid #bbf7d0',
+                            borderRadius: '8px',
+                            padding: '20px',
+                            marginBottom: '16px'
                           }}>
-                            <div>
-                              <div style={{ 
-                                fontWeight: 600, 
-                                color: '#343541',
+                            <div style={{ display: 'flex', alignItems: 'center', marginBottom: '16px' }}>
+                              <div style={{
+                                width: '32px',
+                                height: '32px',
+                                background: '#10b981',
+                                borderRadius: '8px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                marginRight: '12px'
+                              }}>
+                                <span style={{ color: 'white', fontSize: '16px' }}>💰</span>
+                              </div>
+                              <h4 style={{ fontWeight: 'bold', color: '#343541', fontSize: '16px', margin: 0 }}>Admin Price Calculator</h4>
+                            </div>
+
+                            {/* Input Grid */}
+                            <div style={{
+                              display: 'grid',
+                              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                              gap: '12px',
+                              marginBottom: '16px'
+                            }}>
+                              <div>
+                                <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#343541', marginBottom: '4px' }}>Estimated Work Hours</label>
+                                <input
+                                  type="number"
+                                  value={priceInputs.estimatedWorkHours}
+                                  onChange={(e) => setPriceInputs(prev => ({ ...prev, estimatedWorkHours: e.target.value }))}
+                                  style={{
+                                    width: '100%',
+                                    padding: '8px 12px',
+                                    borderRadius: '6px',
+                                    border: '1px solid #e5e5e5',
+                                    fontSize: '14px',
+                                    boxSizing: 'border-box'
+                                  }}
+                                  placeholder="e.g., 40"
+                                />
+                              </div>
+                              <div>
+                                <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#343541', marginBottom: '4px' }}>Hourly Rate ($)</label>
+                                <input
+                                  type="number"
+                                  value={priceInputs.hourlyRate}
+                                  onChange={(e) => setPriceInputs(prev => ({ ...prev, hourlyRate: e.target.value }))}
+                                  style={{
+                                    width: '100%',
+                                    padding: '8px 12px',
+                                    borderRadius: '6px',
+                                    border: '1px solid #e5e5e5',
+                                    fontSize: '14px',
+                                    boxSizing: 'border-box'
+                                  }}
+                                  placeholder="e.g., 75"
+                                />
+                              </div>
+                              <div>
+                                <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#343541', marginBottom: '4px' }}>Complexity Factor</label>
+                                <select
+                                  value={priceInputs.complexityFactor}
+                                  onChange={(e) => setPriceInputs(prev => ({ ...prev, complexityFactor: e.target.value }))}
+                                  style={{
+                                    width: '100%',
+                                    padding: '8px 12px',
+                                    borderRadius: '6px',
+                                    border: '1px solid #e5e5e5',
+                                    fontSize: '14px',
+                                    boxSizing: 'border-box'
+                                  }}
+                                >
+                                  <option value="0.8">Simple (0.8x)</option>
+                                  <option value="1">Standard (1.0x)</option>
+                                  <option value="1.2">Complex (1.2x)</option>
+                                  <option value="1.5">Very Complex (1.5x)</option>
+                                </select>
+                              </div>
+                              <div>
+                                <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#343541', marginBottom: '4px' }}>Admin Fee ($)</label>
+                                <input
+                                  type="number"
+                                  value={priceInputs.adminFee}
+                                  onChange={(e) => setPriceInputs(prev => ({ ...prev, adminFee: e.target.value }))}
+                                  style={{
+                                    width: '100%',
+                                    padding: '8px 12px',
+                                    borderRadius: '6px',
+                                    border: '1px solid #e5e5e5',
+                                    fontSize: '14px',
+                                    boxSizing: 'border-box'
+                                  }}
+                                  placeholder="e.g., 500"
+                                />
+                              </div>
+                              <div>
+                                <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#343541', marginBottom: '4px' }}>Commission ($)</label>
+                                <input
+                                  type="number"
+                                  value={priceInputs.commission}
+                                  onChange={(e) => setPriceInputs(prev => ({ ...prev, commission: e.target.value }))}
+                                  style={{
+                                    width: '100%',
+                                    padding: '8px 12px',
+                                    borderRadius: '6px',
+                                    border: '1px solid #e5e5e5',
+                                    fontSize: '14px',
+                                    boxSizing: 'border-box'
+                                  }}
+                                  placeholder="e.g., 200"
+                                />
+                              </div>
+                              <div>
+                                <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#343541', marginBottom: '4px' }}>Surcharges ($)</label>
+                                <input
+                                  type="number"
+                                  value={priceInputs.surcharges}
+                                  onChange={(e) => setPriceInputs(prev => ({ ...prev, surcharges: e.target.value }))}
+                                  style={{
+                                    width: '100%',
+                                    padding: '8px 12px',
+                                    borderRadius: '6px',
+                                    border: '1px solid #e5e5e5',
+                                    fontSize: '14px',
+                                    boxSizing: 'border-box'
+                                  }}
+                                  placeholder="e.g., 100"
+                                />
+                              </div>
+                              <div>
+                                <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#343541', marginBottom: '4px' }}>Discounts ($)</label>
+                                <input
+                                  type="number"
+                                  value={priceInputs.discounts}
+                                  onChange={(e) => setPriceInputs(prev => ({ ...prev, discounts: e.target.value }))}
+                                  style={{
+                                    width: '100%',
+                                    padding: '8px 12px',
+                                    borderRadius: '6px',
+                                    border: '1px solid #e5e5e5',
+                                    fontSize: '14px',
+                                    boxSizing: 'border-box'
+                                  }}
+                                  placeholder="e.g., 50"
+                                />
+                              </div>
+                            </div>
+
+                            {/* Calculate Button */}
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <button
+                                onClick={calculatePrice}
+                                disabled={!priceInputs.estimatedWorkHours || !priceInputs.hourlyRate}
+                                style={{
+                                  background: (!priceInputs.estimatedWorkHours || !priceInputs.hourlyRate) ? '#e5e7eb' : '#10b981',
+                                  color: (!priceInputs.estimatedWorkHours || !priceInputs.hourlyRate) ? '#9ca3af' : '#ffffff',
+                                  border: 'none',
+                                  borderRadius: '6px',
+                                  padding: '10px 20px',
+                                  fontWeight: 600,
+                                  fontSize: '14px',
+                                  cursor: (!priceInputs.estimatedWorkHours || !priceInputs.hourlyRate) ? 'not-allowed' : 'pointer',
+                                  transition: 'all 0.2s ease'
+                                }}
+                                onMouseEnter={(e) => {
+                                  if (priceInputs.estimatedWorkHours && priceInputs.hourlyRate) {
+                                    e.target.style.background = '#059669';
+                                  }
+                                }}
+                                onMouseLeave={(e) => {
+                                  if (priceInputs.estimatedWorkHours && priceInputs.hourlyRate) {
+                                    e.target.style.background = '#10b981';
+                                  }
+                                }}
+                              >
+                                Calculate Price
+                              </button>
+
+                              {calculatedPrice && (
+                                <div style={{
+                                  fontSize: '18px',
+                                  fontWeight: 'bold',
+                                  color: '#059669'
+                                }}>
+                                  Calculated Price: ${calculatedPrice}
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Action Buttons */}
+                            <div style={{
+                              display: 'flex',
+                              justifyContent: 'flex-end',
+                              gap: '12px',
+                              marginTop: '20px'
+                            }}>
+                              <button
+                                onClick={() => setShowPriceCalculator(false)}
+                                style={{
+                                  background: '#f3f4f6',
+                                  color: '#374151',
+                                  border: '1px solid #d1d5db',
+                                  borderRadius: '6px',
+                                  padding: '10px 20px',
+                                  fontWeight: 500,
+                                  fontSize: '14px',
+                                  cursor: 'pointer',
+                                  transition: 'all 0.2s ease'
+                                }}
+                                onMouseEnter={(e) => {
+                                  e.target.style.background = '#e5e7eb';
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.target.style.background = '#f3f4f6';
+                                }}
+                              >
+                                Cancel
+                              </button>
+
+                              <button
+                                onClick={() => {
+                                  if (calculatedPrice) {
+                                    setFinalApprovalReady(true);
+                                  }
+                                }}
+                                disabled={!calculatedPrice}
+                                style={{
+                                  background: !calculatedPrice ? '#e5e7eb' : '#3b82f6',
+                                  color: !calculatedPrice ? '#9ca3af' : '#ffffff',
+                                  border: 'none',
+                                  borderRadius: '6px',
+                                  padding: '10px 20px',
+                                  fontWeight: 600,
+                                  fontSize: '14px',
+                                  cursor: !calculatedPrice ? 'not-allowed' : 'pointer',
+                                  transition: 'all 0.2s ease'
+                                }}
+                                onMouseEnter={(e) => {
+                                  if (calculatedPrice) {
+                                    e.target.style.background = '#2563eb';
+                                  }
+                                }}
+                                onMouseLeave={(e) => {
+                                  if (calculatedPrice) {
+                                    e.target.style.background = '#3b82f6';
+                                  }
+                                }}
+                              >
+                                Set Price & Approve
+                              </button>
+                            </div>
+                          </div>
+                        ) : finalApprovalReady ? (
+                          <div style={{
+                            background: '#eff6ff',
+                            border: '1px solid #bfdbfe',
+                            borderRadius: '8px',
+                            padding: '20px',
+                            marginBottom: '16px'
+                          }}>
+                            <div style={{ display: 'flex', alignItems: 'center', marginBottom: '16px' }}>
+                              <div style={{
+                                width: '32px',
+                                height: '32px',
+                                background: '#3b82f6',
+                                borderRadius: '8px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                marginRight: '12px'
+                              }}>
+                                <span style={{ color: 'white', fontSize: '16px' }}>✅</span>
+                              </div>
+                              <h4 style={{ fontWeight: 'bold', color: '#343541', fontSize: '16px', margin: 0 }}>Confirm Approval</h4>
+                            </div>
+
+                            <p style={{ color: '#374151', marginBottom: '16px' }}>
+                              You are about to approve this estimate with a final price of <strong>${calculatedPrice}</strong>.
+                              This action cannot be undone.
+                            </p>
+
+                            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+                              <button
+                                onClick={() => setFinalApprovalReady(false)}
+                                disabled={processing}
+                                style={{
+                                  background: '#f3f4f6',
+                                  color: '#374151',
+                                  border: '1px solid #d1d5db',
+                                  borderRadius: '6px',
+                                  padding: '10px 20px',
+                                  fontWeight: 500,
+                                  fontSize: '14px',
+                                  cursor: processing ? 'not-allowed' : 'pointer',
+                                  transition: 'all 0.2s ease'
+                                }}
+                                onMouseEnter={(e) => {
+                                  if (!processing) {
+                                    e.target.style.background = '#e5e7eb';
+                                  }
+                                }}
+                                onMouseLeave={(e) => {
+                                  if (!processing) {
+                                    e.target.style.background = '#f3f4f6';
+                                  }
+                                }}
+                              >
+                                Cancel
+                              </button>
+
+                              <button
+                                onClick={() => handleFinalApproval(pendingEstimate)}
+                                disabled={processing}
+                                style={{
+                                  background: processing ? '#93c5fd' : '#3b82f6',
+                                  color: '#ffffff',
+                                  border: 'none',
+                                  borderRadius: '6px',
+                                  padding: '10px 20px',
+                                  fontWeight: 600,
+                                  fontSize: '14px',
+                                  cursor: processing ? 'not-allowed' : 'pointer',
+                                  transition: 'all 0.2s ease',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '8px'
+                                }}
+                                onMouseEnter={(e) => {
+                                  if (!processing) {
+                                    e.target.style.background = '#2563eb';
+                                  }
+                                }}
+                                onMouseLeave={(e) => {
+                                  if (!processing) {
+                                    e.target.style.background = '#3b82f6';
+                                  }
+                                }}
+                              >
+                                {processing ? (
+                                  <>
+                                    <div style={{
+                                      width: '16px',
+                                      height: '16px',
+                                      border: '2px solid #ffffff',
+                                      borderTop: '2px solid transparent',
+                                      borderRadius: '50%',
+                                      animation: 'spin 1s linear infinite'
+                                    }}></div>
+                                    Processing...
+                                  </>
+                                ) : (
+                                  'Confirm Approval'
+                                )}
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div style={{
+                            background: '#fffbeb',
+                            border: '1px solid #fde68a',
+                            borderRadius: '8px',
+                            padding: '20px',
+                            marginBottom: '16px'
+                          }}>
+                            <div style={{ display: 'flex', alignItems: 'center', marginBottom: '16px' }}>
+                              <div style={{
+                                width: '32px',
+                                height: '32px',
+                                background: '#f59e0b',
+                                borderRadius: '8px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                marginRight: '12px'
+                              }}>
+                                <span style={{ color: 'white', fontSize: '16px' }}>⚠️</span>
+                              </div>
+                              <h4 style={{ fontWeight: 'bold', color: '#343541', fontSize: '16px', margin: 0 }}>Pending Estimate Approval</h4>
+                            </div>
+
+                            <p style={{ color: '#374151', marginBottom: '16px' }}>
+                              This project has a pending estimate that requires your approval.
+                              You can calculate a custom price using our pricing calculator.
+                            </p>
+
+                            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                              <button
+                                onClick={() => setShowPriceCalculator(true)}
+                                style={{
+                                  background: '#f59e0b',
+                                  color: '#ffffff',
+                                  border: 'none',
+                                  borderRadius: '6px',
+                                  padding: '10px 20px',
+                                  fontWeight: 600,
+                                  fontSize: '14px',
+                                  cursor: 'pointer',
+                                  transition: 'all 0.2s ease'
+                                }}
+                                onMouseEnter={(e) => {
+                                  e.target.style.background = '#d97706';
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.target.style.background = '#f59e0b';
+                                }}
+                              >
+                                Open Price Calculator
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div style={{
+                        background: '#f3f4f6',
+                        border: '1px solid #e5e5e5',
+                        borderRadius: '8px',
+                        padding: '20px',
+                        textAlign: 'center',
+                        color: '#6b7280'
+                      }}>
+                        No pending estimates for this project.
+                      </div>
+                    )}
+                  </div>
+
+                  {/* n8n Quote Reviews Section - ADDED HERE */}
+                  {isAdminAuthenticated && selected && selected._id && selected._id.startsWith('n8n-') && pendingN8nReviews && pendingN8nReviews.length > 0 && (
+                    <div style={{
+                      background: '#ffffff',
+                      borderRadius: '8px',
+                      padding: '20px',
+                      border: '1px solid #e5e5e5',
+                      marginBottom: '20px'
+                    }}>
+                      <h4 style={{
+                        color: '#343541',
+                        fontWeight: 600,
+                        marginBottom: '16px',
+                        fontSize: '16px'
+                      }}>
+                        🔄 n8n Custom Modifications
+                      </h4>
+
+                      {/* Extract queue ID from project ID (format: n8n-{queue_id}) */}
+                      {(() => {
+                        const queueId = selected._id.substring(4); // Remove "n8n-" prefix
+                        const relevantReview = pendingN8nReviews.find(review => review.queue_id === queueId);
+
+                        return relevantReview ? (
+                          <div key={relevantReview.queue_id} style={{
+                            background: '#f8f9fa',
+                            borderRadius: '8px',
+                            padding: '16px',
+                            border: '1px solid #e5e5e5'
+                          }}>
+                            <div style={{
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                              alignItems: 'center',
+                              marginBottom: '12px'
+                            }}>
+                              <div>
+                                <div style={{
+                                  fontWeight: 600,
+                                  color: '#343541',
+                                  marginBottom: '4px'
+                                }}>
+                                  Custom Modification Request
+                                </div>
+                                <div style={{
+                                  fontSize: '14px',
+                                  color: '#6b7280'
+                                }}>
+                                  Queue ID: {relevantReview.queue_id}
+                                </div>
+                              </div>
+                              <div style={{
+                                fontSize: '12px',
+                                color: '#9ca3af',
+                                background: '#f3f4f6',
+                                padding: '4px 8px',
+                                borderRadius: '4px'
+                              }}>
+                                {formatDate(relevantReview.created_at)}
+                              </div>
+                            </div>
+
+                            <div style={{
+                              marginBottom: '16px',
+                              fontSize: '14px',
+                              color: '#343541'
+                            }}>
+                              <div style={{
+                                fontWeight: 500,
                                 marginBottom: '4px'
                               }}>
-                                Custom Modification Request
+                                Modifications:
                               </div>
-                              <div style={{ 
-                                fontSize: '14px', 
-                                color: '#6b7280'
-                              }}>
-                                Queue ID: {relevantReview.queue_id}
+                              <div>
+                                {relevantReview.original_request?.modifications || 'No details provided'}
                               </div>
-                            </div>
-                            <div style={{ 
-                              fontSize: '12px', 
-                              color: '#9ca3af',
-                              background: '#f3f4f6',
-                              padding: '4px 8px',
-                              borderRadius: '4px'
-                            }}>
-                              {formatDate(relevantReview.created_at)}
-                            </div>
-                          </div>
-                          
-                          <div style={{ 
-                            marginBottom: '16px',
-                            fontSize: '14px',
-                            color: '#343541'
-                          }}>
-                            <div style={{ 
-                              fontWeight: 500, 
-                              marginBottom: '4px' 
-                            }}>
-                              Modifications:
-                            </div>
-                            <div>
-                              {relevantReview.original_request?.modifications || 'No details provided'}
-                            </div>
-                            
-                            {/* Display nodes requiring pricing if available */}
-                            {relevantReview.generated_quote?.items && relevantReview.generated_quote.items.length > 0 && (
-                              <div style={{ marginTop: '12px' }}>
-                                <div style={{ 
-                                  fontWeight: 500, 
-                                  marginBottom: '4px' 
-                                }}>
-                                  Nodes Requiring Pricing:
-                                </div>
-                                <div style={{ 
-                                  maxHeight: '150px', 
-                                  overflowY: 'auto',
-                                  border: '1px solid #e5e5e5',
-                                  borderRadius: '4px',
-                                  padding: '8px'
-                                }}>
-                                  {relevantReview.generated_quote.items.map((item, index) => (
-                                    <div key={index} style={{ 
-                                      padding: '4px 0',
-                                      borderBottom: index < relevantReview.generated_quote.items.length - 1 ? '1px solid #f0f0f0' : 'none'
-                                    }}>
-                                      <span style={{ fontWeight: 500 }}>{item.node_label || item.node_type}</span>
-                                      {' - '}
-                                      <span style={{ color: item.base_price === 0 ? '#dc2626' : '#059669' }}>
-                                        {item.base_price === 0 ? 'Price not set (requires manual pricing)' : `$${item.base_price.toFixed(2)}`}
-                                      </span>
-                                      {item.requires_manual_review && (
-                                        <span style={{ 
-                                          background: '#fef3c7', 
-                                          color: '#92400e',
-                                          fontSize: '10px',
-                                          padding: '2px 4px',
-                                          borderRadius: '2px',
-                                          marginLeft: '6px'
-                                        }}>
-                                          Manual Review
+
+                              {/* Display nodes requiring pricing if available */}
+                              {relevantReview.generated_quote?.items && relevantReview.generated_quote.items.length > 0 && (
+                                <div style={{ marginTop: '12px' }}>
+                                  <div style={{
+                                    fontWeight: 500,
+                                    marginBottom: '4px'
+                                  }}>
+                                    Nodes Requiring Pricing:
+                                  </div>
+                                  <div style={{
+                                    maxHeight: '150px',
+                                    overflowY: 'auto',
+                                    border: '1px solid #e5e5e5',
+                                    borderRadius: '4px',
+                                    padding: '8px'
+                                  }}>
+                                    {relevantReview.generated_quote.items.map((item, index) => (
+                                      <div key={index} style={{
+                                        padding: '4px 0',
+                                        borderBottom: index < relevantReview.generated_quote.items.length - 1 ? '1px solid #f0f0f0' : 'none'
+                                      }}>
+                                        <span style={{ fontWeight: 500 }}>{item.node_label || item.node_type}</span>
+                                        {' - '}
+                                        <span style={{ color: item.base_price === 0 ? '#dc2626' : '#059669' }}>
+                                          {item.base_price === 0 ? 'Price not set (requires manual pricing)' : `$${item.base_price.toFixed(2)}`}
                                         </span>
-                                      )}
-                                    </div>
-                                  ))}
+                                        {item.requires_manual_review && (
+                                          <span style={{
+                                            background: '#fef3c7',
+                                            color: '#92400e',
+                                            fontSize: '10px',
+                                            padding: '2px 4px',
+                                            borderRadius: '2px',
+                                            marginLeft: '6px'
+                                          }}>
+                                            Manual Review
+                                          </span>
+                                        )}
+                                      </div>
+                                    ))}
+                                  </div>
                                 </div>
-                              </div>
-                            )}
+                              )}
+                            </div>
+
+                            <div style={{
+                              display: 'flex',
+                              justifyContent: 'flex-end'
+                            }}>
+                              <button
+                                onClick={() => {
+                                  setSelectedN8nReview(relevantReview);
+                                  setShowN8nPriceModal(true);
+                                }}
+                                style={{
+                                  background: '#10b981',
+                                  color: '#ffffff',
+                                  border: 'none',
+                                  borderRadius: '6px',
+                                  padding: '8px 16px',
+                                  fontWeight: 500,
+                                  fontSize: '14px',
+                                  cursor: 'pointer',
+                                  transition: 'background 0.2s ease'
+                                }}
+                                onMouseEnter={(e) => {
+                                  e.target.style.background = '#059669';
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.target.style.background = '#10b981';
+                                }}
+                              >
+                                Set Price & Approve
+                              </button>
+                            </div>
                           </div>
-                          
-                          <div style={{ 
-                            display: 'flex', 
-                            justifyContent: 'flex-end'
+                        ) : (
+                          <div style={{
+                            color: '#9ca3af',
+                            textAlign: 'center',
+                            padding: '20px',
+                            fontStyle: 'italic'
                           }}>
-                            <button
-                              onClick={() => {
-                                setSelectedN8nReview(relevantReview);
-                                setShowN8nPriceModal(true);
-                              }}
-                              style={{
-                                background: '#10b981',
-                                color: '#ffffff',
-                                border: 'none',
-                                borderRadius: '6px',
-                                padding: '8px 16px',
-                                fontWeight: 500,
-                                fontSize: '14px',
-                                cursor: 'pointer',
-                                transition: 'background 0.2s ease'
-                              }}
-                              onMouseEnter={(e) => {
-                                e.target.style.background = '#059669';
-                              }}
-                              onMouseLeave={(e) => {
-                                e.target.style.background = '#10b981';
-                              }}
-                            >
-                              Set Price & Approve
-                            </button>
+                            No pending n8n quote reviews for this project
                           </div>
-                        </div>
-                      ) : (
-                        <div style={{ 
-                          color: '#9ca3af', 
-                          textAlign: 'center',
-                          padding: '20px',
-                          fontStyle: 'italic'
-                        }}>
-                          No pending n8n quote reviews for this project
-                        </div>
-                      );
-                    })()}
-                  </div>
-                )}
-              </div>
+                        );
+                      })()}
+                    </div>
+                  )}
+                </div>
               ) : (
                 <div style={{
                   background: '#f8f9fa',
@@ -1792,7 +1799,7 @@ export default function AdminDashboard() {
           </div>
         </div>
       </div>
-      
+
       {/* n8n Price Modal */}
       {showN8nPriceModal && selectedN8nReview && (
         <div style={{
@@ -1828,16 +1835,16 @@ export default function AdminDashboard() {
             }}>
               Set Price for Custom Modification
             </h3>
-            
+
             <div style={{ marginBottom: '20px' }}>
-              <div style={{ 
-                fontWeight: 500, 
+              <div style={{
+                fontWeight: 500,
                 color: '#343541',
                 marginBottom: '8px'
               }}>
                 Custom Modification Request:
               </div>
-              <div style={{ 
+              <div style={{
                 color: '#6b7280',
                 fontSize: '14px',
                 marginBottom: '16px',
@@ -1848,19 +1855,19 @@ export default function AdminDashboard() {
               }}>
                 {selectedN8nReview.original_request?.modifications || 'No modification details provided'}
               </div>
-              
+
               {/* Display nodes requiring pricing if available */}
               {selectedN8nReview.generated_quote?.items && selectedN8nReview.generated_quote.items.length > 0 && (
                 <div style={{ marginBottom: '16px' }}>
-                  <div style={{ 
-                    fontWeight: 500, 
+                  <div style={{
+                    fontWeight: 500,
                     color: '#343541',
                     marginBottom: '8px'
                   }}>
                     Workflow Nodes ({selectedN8nReview.generated_quote.items.length}):
                   </div>
-                  <div style={{ 
-                    maxHeight: '250px', 
+                  <div style={{
+                    maxHeight: '250px',
                     overflowY: 'auto',
                     border: '1px solid #e5e5e5',
                     borderRadius: '4px',
@@ -1868,7 +1875,7 @@ export default function AdminDashboard() {
                     fontSize: '13px'
                   }}>
                     {selectedN8nReview.generated_quote.items.map((item, index) => (
-                      <div key={index} style={{ 
+                      <div key={index} style={{
                         padding: '8px 0',
                         borderBottom: index < selectedN8nReview.generated_quote.items.length - 1 ? '1px solid #f0f0f0' : 'none'
                       }}>
@@ -1876,8 +1883,8 @@ export default function AdminDashboard() {
                           <div>
                             <span style={{ fontWeight: 500 }}>{item.node_label || item.node_type}</span>
                             {item.requires_manual_review && (
-                              <span style={{ 
-                                background: '#fef3c7', 
+                              <span style={{
+                                background: '#fef3c7',
                                 color: '#92400e',
                                 fontSize: '10px',
                                 padding: '2px 4px',
@@ -1925,10 +1932,10 @@ export default function AdminDashboard() {
                           </div>
                         </div>
                         {item.base_price === 0 && (
-                          <div style={{ 
-                            color: '#dc2626', 
-                            fontSize: '11px', 
-                            marginTop: '4px' 
+                          <div style={{
+                            color: '#dc2626',
+                            fontSize: '11px',
+                            marginTop: '4px'
                           }}>
                             Price not set (requires manual pricing)
                           </div>
@@ -1939,11 +1946,11 @@ export default function AdminDashboard() {
                 </div>
               )}
             </div>
-            
-            <div style={{ 
-              display: 'flex', 
-              justifyContent: 'flex-end', 
-              gap: '12px' 
+
+            <div style={{
+              display: 'flex',
+              justifyContent: 'flex-end',
+              gap: '12px'
             }}>
               <button
                 onClick={() => {
@@ -1971,14 +1978,14 @@ export default function AdminDashboard() {
               >
                 Cancel
               </button>
-              
+
               <button
                 onClick={() => {
                   // Calculate total price from individual node prices
                   let totalPrice = 0;
                   let allPricesSet = true;
                   const nodePrices = {};
-                  
+
                   if (selectedN8nReview.generated_quote?.items) {
                     selectedN8nReview.generated_quote.items.forEach(item => {
                       if (item.base_price === 0) {
@@ -2002,7 +2009,7 @@ export default function AdminDashboard() {
                       }
                     });
                   }
-                  
+
                   if (allPricesSet && totalPrice > 0) {
                     handleN8nQuoteApproval(selectedN8nReview.queue_id, totalPrice.toFixed(2), nodePrices);
                   }

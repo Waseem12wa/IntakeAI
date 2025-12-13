@@ -6,23 +6,23 @@ export default function Footer() {
     <footer style={{
       background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
       color: '#ffffff',
-      padding: '80px 20px 40px 20px',
+      padding: 'clamp(40px, 8vw, 80px) clamp(16px, 4vw, 20px) 40px',
       fontFamily: "'Google Sans', 'Roboto', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif",
-      marginTop: '100px'
+      marginTop: 'clamp(50px, 10vw, 100px)'
     }}>
       <div style={{
         maxWidth: '1200px',
         margin: '0 auto'
       }}>
-        
+
         {/* Main Footer Content */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-          gap: '60px',
-          marginBottom: '60px'
+          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 250px), 1fr))',
+          gap: 'clamp(30px, 6vw, 60px)',
+          marginBottom: 'clamp(30px, 6vw, 60px)'
         }}>
-          
+
           {/* Company Info Section */}
           <div>
             {/* Logo and Company Name */}
@@ -32,13 +32,13 @@ export default function Footer() {
               gap: '12px',
               marginBottom: '24px'
             }}>
-              <img 
-                src="/LOGO.png" 
-                alt="IntakeAI Logo" 
-                style={{ 
+              <img
+                src="/LOGO.png"
+                alt="IntakeAI Logo"
+                style={{
                   height: '40px',
                   objectFit: 'contain'
-                }} 
+                }}
               />
               <span style={{
                 fontSize: '1.5rem',
@@ -48,18 +48,18 @@ export default function Footer() {
                 IntakeAI
               </span>
             </div>
-            
+
             {/* Company Description */}
             <p style={{
-              fontSize: '1rem',
+              fontSize: 'clamp(0.875rem, 1vw + 0.5rem, 1rem)',
               color: '#cbd5e1',
               lineHeight: '1.6',
-              marginBottom: '24px',
-              maxWidth: '300px'
+              marginBottom: 'clamp(16px, 3vw, 24px)',
+              maxWidth: '100%'
             }}>
               Transforming document processing with intelligent AI solutions. We make every document actionable through advanced automation and authentic insights.
             </p>
-            
+
             {/* Contact Info */}
             <div style={{
               display: 'flex',
@@ -79,21 +79,11 @@ export default function Footer() {
                   textDecoration: 'none',
                   transition: 'color 0.2s ease'
                 }}
-                onMouseOver={(e) => e.target.style.color = '#ffffff'}
-                onMouseOut={(e) => e.target.style.color = '#94a3b8'}
+                  onMouseOver={(e) => e.target.style.color = '#ffffff'}
+                  onMouseOut={(e) => e.target.style.color = '#94a3b8'}
                 >
                   hello@intakeai.com
                 </a>
-              </div>
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                fontSize: '0.875rem',
-                color: '#94a3b8'
-              }}>
-                <span>📍</span>
-                <span>Main Road, Islamabad, Pakistan</span>
               </div>
               <div style={{
                 display: 'flex',
@@ -129,8 +119,8 @@ export default function Footer() {
                 fontSize: '0.875rem',
                 transition: 'color 0.2s ease'
               }}
-              onMouseOver={(e) => e.target.style.color = '#ffffff'}
-              onMouseOut={(e) => e.target.style.color = '#cbd5e1'}
+                onMouseOver={(e) => e.target.style.color = '#ffffff'}
+                onMouseOut={(e) => e.target.style.color = '#cbd5e1'}
               >
                 Home
               </Link>
@@ -140,8 +130,8 @@ export default function Footer() {
                 fontSize: '0.875rem',
                 transition: 'color 0.2s ease'
               }}
-              onMouseOver={(e) => e.target.style.color = '#ffffff'}
-              onMouseOut={(e) => e.target.style.color = '#cbd5e1'}
+                onMouseOver={(e) => e.target.style.color = '#ffffff'}
+                onMouseOut={(e) => e.target.style.color = '#cbd5e1'}
               >
                 About Us
               </Link>
@@ -151,8 +141,8 @@ export default function Footer() {
                 fontSize: '0.875rem',
                 transition: 'color 0.2s ease'
               }}
-              onMouseOver={(e) => e.target.style.color = '#ffffff'}
-              onMouseOut={(e) => e.target.style.color = '#cbd5e1'}
+                onMouseOver={(e) => e.target.style.color = '#ffffff'}
+                onMouseOut={(e) => e.target.style.color = '#cbd5e1'}
               >
                 Projects
               </Link>
@@ -162,8 +152,8 @@ export default function Footer() {
                 fontSize: '0.875rem',
                 transition: 'color 0.2s ease'
               }}
-              onMouseOver={(e) => e.target.style.color = '#ffffff'}
-              onMouseOut={(e) => e.target.style.color = '#cbd5e1'}
+                onMouseOver={(e) => e.target.style.color = '#ffffff'}
+                onMouseOut={(e) => e.target.style.color = '#cbd5e1'}
               >
                 Contact
               </Link>
@@ -173,8 +163,8 @@ export default function Footer() {
                 fontSize: '0.875rem',
                 transition: 'color 0.2s ease'
               }}
-              onMouseOver={(e) => e.target.style.color = '#ffffff'}
-              onMouseOut={(e) => e.target.style.color = '#cbd5e1'}
+                onMouseOver={(e) => e.target.style.color = '#ffffff'}
+                onMouseOut={(e) => e.target.style.color = '#cbd5e1'}
               >
                 Post a Project
               </Link>
@@ -249,11 +239,13 @@ export default function Footer() {
             </p>
             <div style={{
               display: 'flex',
+              flexDirection: 'row',
               gap: '8px',
-              marginBottom: '20px'
+              marginBottom: '20px',
+              flexWrap: 'wrap'
             }}>
-              <input 
-                type="email" 
+              <input
+                type="email"
                 placeholder="Enter your email"
                 style={{
                   flex: 1,
@@ -277,13 +269,13 @@ export default function Footer() {
                 cursor: 'pointer',
                 transition: 'background 0.2s ease'
               }}
-              onMouseOver={(e) => e.target.style.background = '#1976D2'}
-              onMouseOut={(e) => e.target.style.background = '#2196F3'}
+                onMouseOver={(e) => e.target.style.background = '#1976D2'}
+                onMouseOut={(e) => e.target.style.background = '#2196F3'}
               >
                 Subscribe
               </button>
             </div>
-            
+
             {/* Social Links */}
             <div style={{
               display: 'flex',
@@ -296,8 +288,8 @@ export default function Footer() {
                 textDecoration: 'none',
                 transition: 'color 0.2s ease'
               }}
-              onMouseOver={(e) => e.target.style.color = '#ffffff'}
-              onMouseOut={(e) => e.target.style.color = '#94a3b8'}
+                onMouseOver={(e) => e.target.style.color = '#ffffff'}
+                onMouseOut={(e) => e.target.style.color = '#94a3b8'}
               >
                 📘
               </a>
@@ -307,8 +299,8 @@ export default function Footer() {
                 textDecoration: 'none',
                 transition: 'color 0.2s ease'
               }}
-              onMouseOver={(e) => e.target.style.color = '#ffffff'}
-              onMouseOut={(e) => e.target.style.color = '#94a3b8'}
+                onMouseOver={(e) => e.target.style.color = '#ffffff'}
+                onMouseOut={(e) => e.target.style.color = '#94a3b8'}
               >
                 🐦
               </a>
@@ -318,8 +310,8 @@ export default function Footer() {
                 textDecoration: 'none',
                 transition: 'color 0.2s ease'
               }}
-              onMouseOver={(e) => e.target.style.color = '#ffffff'}
-              onMouseOut={(e) => e.target.style.color = '#94a3b8'}
+                onMouseOver={(e) => e.target.style.color = '#ffffff'}
+                onMouseOut={(e) => e.target.style.color = '#94a3b8'}
               >
                 💼
               </a>
@@ -329,8 +321,8 @@ export default function Footer() {
                 textDecoration: 'none',
                 transition: 'color 0.2s ease'
               }}
-              onMouseOver={(e) => e.target.style.color = '#ffffff'}
-              onMouseOut={(e) => e.target.style.color = '#94a3b8'}
+                onMouseOver={(e) => e.target.style.color = '#ffffff'}
+                onMouseOut={(e) => e.target.style.color = '#94a3b8'}
               >
                 📷
               </a>
@@ -348,7 +340,7 @@ export default function Footer() {
           flexWrap: 'wrap',
           gap: '20px'
         }}>
-          
+
           {/* Copyright */}
           <div style={{
             fontSize: '0.875rem',
@@ -356,7 +348,7 @@ export default function Footer() {
           }}>
             © 2024 IntakeAI. All rights reserved.
           </div>
-          
+
           {/* Legal Links */}
           <div style={{
             display: 'flex',
@@ -368,8 +360,8 @@ export default function Footer() {
               textDecoration: 'none',
               transition: 'color 0.2s ease'
             }}
-            onMouseOver={(e) => e.target.style.color = '#ffffff'}
-            onMouseOut={(e) => e.target.style.color = '#94a3b8'}
+              onMouseOver={(e) => e.target.style.color = '#ffffff'}
+              onMouseOut={(e) => e.target.style.color = '#94a3b8'}
             >
               Privacy Policy
             </a>
@@ -378,8 +370,8 @@ export default function Footer() {
               textDecoration: 'none',
               transition: 'color 0.2s ease'
             }}
-            onMouseOver={(e) => e.target.style.color = '#ffffff'}
-            onMouseOut={(e) => e.target.style.color = '#94a3b8'}
+              onMouseOver={(e) => e.target.style.color = '#ffffff'}
+              onMouseOut={(e) => e.target.style.color = '#94a3b8'}
             >
               Terms of Service
             </a>
@@ -388,8 +380,8 @@ export default function Footer() {
               textDecoration: 'none',
               transition: 'color 0.2s ease'
             }}
-            onMouseOver={(e) => e.target.style.color = '#ffffff'}
-            onMouseOut={(e) => e.target.style.color = '#94a3b8'}
+              onMouseOver={(e) => e.target.style.color = '#ffffff'}
+              onMouseOut={(e) => e.target.style.color = '#94a3b8'}
             >
               Cookie Policy
             </a>

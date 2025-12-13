@@ -1,10 +1,10 @@
 # Environment variables
-# .env files are now tracked
-# .env
-# .env.local
-# .env.production
-# .env.*.local
+.env
+.env.local
+.env.production
+.env.*.local
 !.env.example
+
 
 # Dependencies
 node_modules/
@@ -47,7 +47,7 @@ mongodb-backup/
 
 # Backend specific
 backend/node_modules/
-# backend/.env  # Now tracked
+backend/.env
 backend/npm-debug.log*
 backend/.DS_Store
 backend/tmp/

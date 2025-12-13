@@ -7,7 +7,7 @@ const schemaPath = path.join(__dirname, '../../schemas/n8n-workflow.schema.json'
 const n8nSchema = JSON.parse(fs.readFileSync(schemaPath, 'utf8'));
 
 // Initialize AJV validator
-const ajv = new Ajv({ 
+const ajv = new Ajv({
   allErrors: true,
   verbose: true,
   strict: false
@@ -34,58 +34,91 @@ function validateN8nWorkflow(workflowData) {
       }
     };
   }
-  
+
+  // First try schema validation
   const valid = validate(workflowData);
-  
+
   if (valid) {
     return {
       isValid: true,
       message: 'Workflow validation successful'
     };
-  } else {
-    // Get the first error for detailed reporting
-    const firstError = validate.errors[0];
-    let path = '';
-    let reason = '';
-    
-    if (firstError.instancePath) {
-      path = firstError.instancePath.substring(1); // Remove leading '/'
-    } else if (firstError.params && firstError.params.missingProperty) {
-      path = firstError.params.missingProperty;
+  }
+
+  // If schema validation fails, do a basic structure check as fallback
+  // This allows for more flexible n8n workflow formats
+  const hasNodes = workflowData && Array.isArray(workflowData.nodes);
+  const hasConnections = workflowData && typeof workflowData.connections === 'object';
+
+  // If it has nodes array, consider it valid enough (connections can be optional for single-node workflows)
+  if (hasNodes && workflowData.nodes.length > 0) {
+    // Check if at least one node has a type field
+    const hasValidNode = workflowData.nodes.some(node => node && node.type);
+
+    if (hasValidNode) {
+      console.log('⚠️ Workflow passed basic validation (lenient mode) but failed strict schema validation');
+      return {
+        isValid: true,
+        message: 'Workflow validation successful (lenient mode)',
+        warning: 'Some optional fields may be missing, but workflow structure is valid'
+      };
     }
-    
-    // Provide more helpful error messages
-    let errorMessage = firstError.message;
-    if (firstError.keyword === 'required' && firstError.params && firstError.params.missingProperty === 'nodes') {
-      errorMessage = 'This file is missing the required "nodes" property. An n8n workflow file must contain a "nodes" array with workflow nodes. This file does not appear to be a valid n8n workflow export.';
-    } else if (firstError.keyword === 'required' && firstError.params && firstError.params.missingProperty === 'connections') {
-      errorMessage = 'This file is missing the required "connections" property. An n8n workflow file must contain a "connections" object. This file does not appear to be a valid n8n workflow export.';
-    }
-    
-    switch (firstError.keyword) {
-      case 'required':
-        reason = `missing required field`;
-        break;
-      case 'type':
-        reason = `invalid type, expected ${firstError.params.type}`;
-        break;
-      case 'enum':
-        reason = `invalid value, must be one of: ${firstError.params.allowedValues ? firstError.params.allowedValues.join(', ') : 'enum values'}`;
-        break;
-      default:
-        reason = firstError.message || 'validation failed';
-    }
-    
+  }
+
+  // ULTRA LENIENT MODE: If it's any valid JSON object or array, accept it
+  // This allows jobs.json, config.json, and other JSON files to be processed
+  if (workflowData && (typeof workflowData === 'object' || Array.isArray(workflowData))) {
+    console.log('⚠️ Accepting non-workflow JSON file in ultra-lenient mode');
     return {
-      isValid: false,
-      error: 'INVALID_N8N_SCHEMA',
-      message: `Invalid n8n workflow: ${errorMessage}`,
-      details: {
-        path: path || 'root',
-        reason: reason
-      }
+      isValid: true,
+      message: 'JSON file accepted (ultra-lenient mode)',
+      warning: 'This does not appear to be an n8n workflow, but will be processed as generic JSON data',
+      isGenericJson: true // Flag to indicate this is not a real workflow
     };
   }
+
+  // If basic validation also fails, return detailed error from schema validation
+  const firstError = validate.errors[0];
+  let path = '';
+  let reason = '';
+
+  if (firstError.instancePath) {
+    path = firstError.instancePath.substring(1); // Remove leading '/'
+  } else if (firstError.params && firstError.params.missingProperty) {
+    path = firstError.params.missingProperty;
+  }
+
+  // Provide more helpful error messages
+  let errorMessage = firstError.message;
+  if (firstError.keyword === 'required' && firstError.params && firstError.params.missingProperty === 'nodes') {
+    errorMessage = 'This file is missing the required "nodes" property. An n8n workflow file must contain a "nodes" array with workflow nodes. This file does not appear to be a valid n8n workflow export.';
+  } else if (firstError.keyword === 'required' && firstError.params && firstError.params.missingProperty === 'connections') {
+    errorMessage = 'This file is missing the required "connections" property. An n8n workflow file must contain a "connections" object. This file does not appear to be a valid n8n workflow export.';
+  }
+
+  switch (firstError.keyword) {
+    case 'required':
+      reason = `missing required field`;
+      break;
+    case 'type':
+      reason = `invalid type, expected ${firstError.params.type}`;
+      break;
+    case 'enum':
+      reason = `invalid value, must be one of: ${firstError.params.allowedValues ? firstError.params.allowedValues.join(', ') : 'enum values'}`;
+      break;
+    default:
+      reason = firstError.message || 'validation failed';
+  }
+
+  return {
+    isValid: false,
+    error: 'INVALID_N8N_SCHEMA',
+    message: `Invalid n8n workflow: ${errorMessage}`,
+    details: {
+      path: path || 'root',
+      reason: reason
+    }
+  };
 }
 
 /**
@@ -106,7 +139,7 @@ function validateFileSize(fileSize, maxSize = 5 * 1024 * 1024) { // 5MB default
       }
     };
   }
-  
+
   return {
     isValid: true,
     message: 'File size is within limits'
@@ -124,12 +157,12 @@ async function validateN8nWorkflowFile(file) {
   if (!sizeValidation.isValid) {
     return sizeValidation;
   }
-  
+
   try {
     // Read and parse the JSON file
     const fileContent = fs.readFileSync(file.path, 'utf8');
     const workflowData = JSON.parse(fileContent);
-    
+
     // Validate against schema
     return validateN8nWorkflow(workflowData);
   } catch (error) {

@@ -6,20 +6,20 @@ export default function Home() {
   const navigate = useNavigate();
 
   return (
-    <div style={{ 
-      background: '#ffffff', 
+    <div style={{
+      background: '#ffffff',
       minHeight: '100vh',
       fontFamily: "'Google Sans', 'Roboto', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif"
     }}>
 
 
       {/* Main Content */}
-      <main style={{ padding: '80px 40px' }}>
+      <main style={{ padding: 'clamp(40px, 8vw, 80px) clamp(16px, 4vw, 40px)' }}>
         {/* Hero Section */}
-        <div style={{ 
-          textAlign: 'center', 
-          maxWidth: '800px', 
-          margin: '0 auto 80px auto' 
+        <div style={{
+          textAlign: 'center',
+          maxWidth: '800px',
+          margin: '0 auto 80px auto'
         }}>
           {/* Tagline */}
           <div style={{
@@ -39,23 +39,24 @@ export default function Home() {
 
           {/* Main Headline */}
           <h1 style={{
-            fontSize: '4rem',
+            fontSize: 'clamp(2rem, 6vw + 1rem, 4rem)',
             fontWeight: 800,
             color: '#000000',
             margin: '0 0 24px 0',
             lineHeight: '1.1',
-            letterSpacing: '-2px'
+            letterSpacing: 'clamp(-1px, -0.5vw, -2px)'
           }}>
             Create faster with <span style={{ color: '#2196F3' }}>AI</span> and collaborate seamlessly
           </h1>
 
           {/* Subtitle */}
           <p style={{
-            fontSize: '1.25rem',
+            fontSize: 'clamp(1rem, 1.5vw + 0.5rem, 1.25rem)',
             color: '#6b7280',
             lineHeight: '1.6',
             maxWidth: '600px',
-            margin: '0 auto 40px auto'
+            margin: '0 auto 40px auto',
+            padding: '0 16px'
           }}>
             Say goodbye to manual data entry and confusing forms. <span style={{ color: '#2196F3' }}>IntakeAI</span> helps you collect and process customer information in just a few clicks.
           </p>
@@ -63,28 +64,31 @@ export default function Home() {
           {/* CTA Buttons */}
           <div style={{
             display: 'flex',
-            gap: '16px',
+            gap: 'clamp(12px, 2vw, 16px)',
             justifyContent: 'center',
             alignItems: 'center',
-            marginBottom: '80px',
-            flexWrap: 'wrap'
+            marginBottom: 'clamp(40px, 8vw, 80px)',
+            flexWrap: 'wrap',
+            padding: '0 16px'
           }}>
-            <button 
+            <button
               onClick={() => navigate('/ai-bot-upload')}
               style={{
                 background: 'linear-gradient(135deg, #2196F3 0%, #0d47a1 100%)',
                 color: '#ffffff',
                 border: 'none',
                 borderRadius: '12px',
-                padding: '16px 32px',
-                fontSize: '18px',
+                padding: 'clamp(12px, 2vw, 16px) clamp(24px, 4vw, 32px)',
+                fontSize: 'clamp(16px, 2vw, 18px)',
                 fontWeight: 600,
                 cursor: 'pointer',
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '12px',
                 transition: 'all 0.3s ease',
-                boxShadow: '0 4px 15px rgba(33, 150, 243, 0.3)'
+                boxShadow: '0 4px 15px rgba(33, 150, 243, 0.3)',
+                minHeight: '44px',
+                minWidth: '44px'
               }}
               onMouseEnter={(e) => {
                 e.target.style.transform = 'translateY(-2px)';
@@ -98,8 +102,8 @@ export default function Home() {
               Intake Bot
               <span style={{ fontSize: '20px' }}>💬</span>
             </button>
-            
-            <button 
+
+            <button
               onClick={() => navigate('/n8n-quote')}
               style={{
                 background: 'linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%)',
@@ -134,12 +138,13 @@ export default function Home() {
         {/* Feature Cards */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-          gap: '24px',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))',
+          gap: 'clamp(16px, 3vw, 24px)',
           maxWidth: '1200px',
-          margin: '0 auto'
+          margin: '0 auto',
+          padding: '0 16px'
         }}>
-          
+
           {/* Card 1 - Paste or write */}
           <div style={{
             background: '#ffffff',

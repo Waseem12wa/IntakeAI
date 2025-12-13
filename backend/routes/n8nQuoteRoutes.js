@@ -11,13 +11,13 @@ const { buildCompactPayload } = require('../services/llmPayloadBuilder');
 const { parseCustomerIntent } = require('../services/intentParser');
 const { buildPrompt } = require('../services/promptEngine');
 const { parseAndValidateLlmResponse } = require('../services/llmResponseParser');
-const { 
-  addToReviewQueue, 
-  getPendingReviews, 
-  getAllReviews, 
-  approveReview, 
+const {
+  addToReviewQueue,
+  getPendingReviews,
+  getAllReviews,
+  approveReview,
   rejectReview,
-  getReviewById 
+  getReviewById
 } = require('../services/reviewQueue');
 const { sendReviewNotification, sendQuoteApprovalNotification } = require('../services/notificationService');
 const N8nQuoteChat = require('../models/N8nQuoteChat');
@@ -68,7 +68,7 @@ router.post('/validate', upload.single('workflow'), async (req, res) => {
 
     // Validate the workflow file
     const validationResult = await validateN8nWorkflowFile(req.file);
-    
+
     if (validationResult.isValid) {
       return res.status(200).json({
         success: true,
@@ -81,7 +81,7 @@ router.post('/validate', upload.single('workflow'), async (req, res) => {
       } catch (cleanupError) {
         console.warn('Failed to clean up temporary file:', cleanupError);
       }
-      
+
       return res.status(400).json(validationResult);
     }
   } catch (error) {
@@ -93,7 +93,7 @@ router.post('/validate', upload.single('workflow'), async (req, res) => {
         details: { reason: error.message }
       });
     }
-    
+
     // Handle other multer errors
     if (error.message === 'Only JSON files are allowed') {
       return res.status(400).json({
@@ -130,7 +130,7 @@ router.post('/parse', upload.single('workflow'), async (req, res) => {
 
     // Validate the workflow file first
     const validationResult = await validateN8nWorkflowFile(req.file);
-    
+
     if (!validationResult.isValid) {
       // Clean up the temporary file
       try {
@@ -138,14 +138,14 @@ router.post('/parse', upload.single('workflow'), async (req, res) => {
       } catch (cleanupError) {
         console.warn('Failed to clean up temporary file:', cleanupError);
       }
-      
+
       return res.status(400).json(validationResult);
     }
 
     // Read and parse the JSON file
     const fileContent = fs.readFileSync(req.file.path, 'utf8');
     const workflowData = JSON.parse(fileContent);
-    
+
     // Clean up the temporary file
     try {
       fs.unlinkSync(req.file.path);
@@ -155,7 +155,7 @@ router.post('/parse', upload.single('workflow'), async (req, res) => {
 
     // Parse the workflow into structured format
     const structuredWorkflow = parseN8nToStructured(workflowData);
-    
+
     return res.status(200).json({
       success: true,
       data: structuredWorkflow
@@ -169,7 +169,7 @@ router.post('/parse', upload.single('workflow'), async (req, res) => {
         details: { reason: error.message }
       });
     }
-    
+
     // Handle other multer errors
     if (error.message === 'Only JSON files are allowed') {
       return res.status(400).json({
@@ -206,7 +206,7 @@ router.post('/price-list', upload.single('workflow'), async (req, res) => {
 
     // Validate the workflow file first
     const validationResult = await validateN8nWorkflowFile(req.file);
-    
+
     if (!validationResult.isValid) {
       // Clean up the temporary file
       try {
@@ -214,14 +214,14 @@ router.post('/price-list', upload.single('workflow'), async (req, res) => {
       } catch (cleanupError) {
         console.warn('Failed to clean up temporary file:', cleanupError);
       }
-      
+
       return res.status(400).json(validationResult);
     }
 
     // Read and parse the JSON file
     const fileContent = fs.readFileSync(req.file.path, 'utf8');
     const workflowData = JSON.parse(fileContent);
-    
+
     // Clean up the temporary file
     try {
       fs.unlinkSync(req.file.path);
@@ -231,10 +231,10 @@ router.post('/price-list', upload.single('workflow'), async (req, res) => {
 
     // Parse the workflow into structured format
     const structuredWorkflow = parseN8nToStructured(workflowData);
-    
+
     // Generate price list
     const priceList = generatePriceList(structuredWorkflow);
-    
+
     return res.status(200).json({
       success: true,
       data: priceList
@@ -248,7 +248,7 @@ router.post('/price-list', upload.single('workflow'), async (req, res) => {
         details: { reason: error.message }
       });
     }
-    
+
     // Handle other multer errors
     if (error.message === 'Only JSON files are allowed') {
       return res.status(400).json({
@@ -285,7 +285,7 @@ router.post('/compact-payload', upload.single('workflow'), async (req, res) => {
 
     // Validate the workflow file first
     const validationResult = await validateN8nWorkflowFile(req.file);
-    
+
     if (!validationResult.isValid) {
       // Clean up the temporary file
       try {
@@ -293,14 +293,14 @@ router.post('/compact-payload', upload.single('workflow'), async (req, res) => {
       } catch (cleanupError) {
         console.warn('Failed to clean up temporary file:', cleanupError);
       }
-      
+
       return res.status(400).json(validationResult);
     }
 
     // Read and parse the JSON file
     const fileContent = fs.readFileSync(req.file.path, 'utf8');
     const workflowData = JSON.parse(fileContent);
-    
+
     // Clean up the temporary file
     try {
       fs.unlinkSync(req.file.path);
@@ -310,17 +310,17 @@ router.post('/compact-payload', upload.single('workflow'), async (req, res) => {
 
     // Parse the workflow into structured format
     const structuredWorkflow = parseN8nToStructured(workflowData);
-    
+
     // Generate price list
     const priceList = generatePriceList(structuredWorkflow);
-    
+
     // Get customer text and business rules from request body
     const customerText = req.body.customer_text || '';
     const businessRules = req.body.business_rules || {};
-    
+
     // Build compact payload
     const compactPayload = buildCompactPayload(priceList, customerText, businessRules);
-    
+
     return res.status(200).json({
       success: true,
       data: compactPayload
@@ -334,7 +334,7 @@ router.post('/compact-payload', upload.single('workflow'), async (req, res) => {
         details: { reason: error.message }
       });
     }
-    
+
     // Handle other multer errors
     if (error.message === 'Only JSON files are allowed') {
       return res.status(400).json({
@@ -361,7 +361,7 @@ router.post('/compact-payload', upload.single('workflow'), async (req, res) => {
 router.post('/parse-intent', (req, res) => {
   try {
     const { customer_text } = req.body;
-    
+
     if (!customer_text) {
       return res.status(400).json({
         error: 'MISSING_CUSTOMER_TEXT',
@@ -369,9 +369,9 @@ router.post('/parse-intent', (req, res) => {
         details: { reason: 'Customer text is required for intent parsing' }
       });
     }
-    
+
     const intent = parseCustomerIntent(customer_text);
-    
+
     return res.status(200).json({
       success: true,
       data: intent
@@ -393,7 +393,7 @@ router.post('/parse-intent', (req, res) => {
 router.post('/build-prompt', (req, res) => {
   try {
     const compactPayload = req.body;
-    
+
     if (!compactPayload) {
       return res.status(400).json({
         error: 'MISSING_PAYLOAD',
@@ -401,9 +401,9 @@ router.post('/build-prompt', (req, res) => {
         details: { reason: 'Compact payload is required for prompt building' }
       });
     }
-    
+
     const prompts = buildPrompt(compactPayload);
-    
+
     return res.status(200).json({
       success: true,
       data: prompts
@@ -425,7 +425,7 @@ router.post('/build-prompt', (req, res) => {
 router.post('/validate-llm-response', (req, res) => {
   try {
     const { llm_json, original_workflow } = req.body;
-    
+
     if (!llm_json || !original_workflow) {
       return res.status(400).json({
         error: 'MISSING_DATA',
@@ -433,9 +433,9 @@ router.post('/validate-llm-response', (req, res) => {
         details: { reason: 'LLM JSON and original workflow are required for validation' }
       });
     }
-    
+
     const validationResult = parseAndValidateLlmResponse(llm_json, original_workflow);
-    
+
     return res.status(200).json({
       success: true,
       data: validationResult
@@ -457,7 +457,7 @@ router.post('/validate-llm-response', (req, res) => {
 router.post('/add-to-review-queue', async (req, res) => {
   try {
     const { quote, reasons, original_request, customer_email } = req.body;
-    
+
     if (!quote || !reasons) {
       return res.status(400).json({
         error: 'MISSING_DATA',
@@ -465,9 +465,9 @@ router.post('/add-to-review-queue', async (req, res) => {
         details: { reason: 'Quote and reasons are required for review queue' }
       });
     }
-    
+
     const queueId = addToReviewQueue(quote, reasons, original_request, customer_email);
-    
+
     // Send notification if review is required
     if (queueId) {
       const queueItem = getReviewById(queueId);
@@ -475,7 +475,7 @@ router.post('/add-to-review-queue', async (req, res) => {
         await sendReviewNotification(queueItem);
       }
     }
-    
+
     return res.status(200).json({
       success: true,
       queue_id: queueId
@@ -497,7 +497,7 @@ router.post('/add-to-review-queue', async (req, res) => {
 router.post('/save-chat', authenticateUser, async (req, res) => {
   try {
     const chatData = req.body;
-    
+
     // Validate required fields
     if (!chatData.workflowId || !chatData.fileName || !chatData.messages || !chatData.totalPrice) {
       return res.status(400).json({
@@ -506,28 +506,28 @@ router.post('/save-chat', authenticateUser, async (req, res) => {
         details: { reason: 'workflowId, fileName, messages, and totalPrice are required' }
       });
     }
-    
+
     // Create new chat document
     const newChat = new N8nQuoteChat(chatData);
     const savedChat = await newChat.save();
-    
+
     // Also save to the new N8nProjectQuote model for complete project tracking
     try {
       // Check if any nodes have zero price or require manual review
       // Send to admin if:
       // 1. Any node requires manual review (not in translation key)
       // 2. Any node has zero price (even if in translation key)
-      const hasZeroPriceNodes = chatData.items && chatData.items.some(item => 
+      const hasZeroPriceNodes = chatData.items && chatData.items.some(item =>
         (item.requiresManualReview !== undefined ? item.requiresManualReview : false) ||
         ((item.basePrice !== undefined ? item.basePrice : (item.base_price || 0)) === 0)
       );
-      
+
       // Prepare customer email - filter out empty strings
       let customerEmailValue = undefined;
       if (chatData.customerEmail && chatData.customerEmail.trim() !== '') {
         customerEmailValue = chatData.customerEmail.trim();
       }
-      
+
       // Get userId from authenticated request
       if (!req.user || !req.user.id) {
         return res.status(401).json({
@@ -556,7 +556,7 @@ router.post('/save-chat', authenticateUser, async (req, res) => {
           basePrice: item.basePrice !== undefined ? item.basePrice : (item.base_price || 0),
           modifiers: [], // Modifiers would need to be populated from the actual workflow
           totalPrice: item.totalPrice !== undefined ? item.totalPrice : (item.total_price || (item.basePrice !== undefined ? item.basePrice : (item.base_price || 0))),
-          requiresManualReview: item.requiresManualReview !== undefined ? item.requiresManualReview : 
+          requiresManualReview: item.requiresManualReview !== undefined ? item.requiresManualReview :
             ((item.basePrice !== undefined ? item.basePrice : (item.base_price || 0)) === 0)
         })),
         modifications: chatData.modifications ? [{
@@ -569,20 +569,20 @@ router.post('/save-chat', authenticateUser, async (req, res) => {
         createdAt: new Date(),
         updatedAt: new Date()
       };
-      
+
       const newProjectQuote = new N8nProjectQuote(projectQuoteData);
       await newProjectQuote.save();
-      
+
       // If there are zero price nodes or nodes requiring manual review, add to review queue
       if (hasZeroPriceNodes) {
-        const zeroPriceItems = chatData.items.filter(item => 
+        const zeroPriceItems = chatData.items.filter(item =>
           (item.requiresManualReview !== undefined ? item.requiresManualReview : false) ||
           ((item.basePrice !== undefined ? item.basePrice : (item.base_price || 0)) === 0)
         );
-        const reasons = zeroPriceItems.map(item => 
+        const reasons = zeroPriceItems.map(item =>
           `Node "${item.nodeLabel || item.node_label || item.nodeType || item.node_type}" requires manual pricing`
         );
-        
+
         const queueId = addToReviewQueue(
           {
             total_price: chatData.totalPrice || 0,
@@ -592,9 +592,9 @@ router.post('/save-chat', authenticateUser, async (req, res) => {
               node_type: item.nodeType || item.node_type || '',
               base_price: item.basePrice !== undefined ? item.basePrice : (item.base_price || 0),
               total_price: item.totalPrice !== undefined ? item.totalPrice : (item.total_price || (item.basePrice || item.base_price || 0)),
-              confidence: (item.requiresManualReview !== undefined ? (item.requiresManualReview ? 0.1 : 0.95) : 
+              confidence: (item.requiresManualReview !== undefined ? (item.requiresManualReview ? 0.1 : 0.95) :
                 ((item.basePrice !== undefined ? item.basePrice : (item.base_price || 0)) === 0 ? 0.1 : 0.95)),
-              requires_manual_review: item.requiresManualReview !== undefined ? item.requiresManualReview : 
+              requires_manual_review: item.requiresManualReview !== undefined ? item.requiresManualReview :
                 ((item.basePrice !== undefined ? item.basePrice : (item.base_price || 0)) === 0)
             }))
           },
@@ -605,14 +605,14 @@ router.post('/save-chat', authenticateUser, async (req, res) => {
           },
           chatData.customerEmail || 'customer@example.com'
         );
-        
+
         console.log('Added to review queue with ID:', queueId);
       }
     } catch (quoteError) {
       console.error('Error saving project quote data:', quoteError);
       // We don't return an error here because the chat was saved successfully
     }
-    
+
     return res.status(200).json({
       success: true,
       data: savedChat
@@ -623,7 +623,7 @@ router.post('/save-chat', authenticateUser, async (req, res) => {
       error: 'INTERNAL_ERROR',
       message: 'An unexpected error occurred while saving chat',
       details: { reason: error.message }
-      });
+    });
   }
 });
 
@@ -634,7 +634,7 @@ router.post('/save-chat', authenticateUser, async (req, res) => {
 router.get('/chats', async (req, res) => {
   try {
     const chats = await N8nQuoteChat.find().sort({ createdAt: -1 });
-    
+
     return res.status(200).json({
       success: true,
       data: chats
@@ -657,7 +657,7 @@ router.get('/chats/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const chat = await N8nQuoteChat.findById(id);
-    
+
     if (!chat) {
       return res.status(404).json({
         error: 'NOT_FOUND',
@@ -665,7 +665,7 @@ router.get('/chats/:id', async (req, res) => {
         details: { reason: 'Chat with specified ID not found' }
       });
     }
-    
+
     return res.status(200).json({
       success: true,
       data: chat
@@ -687,7 +687,7 @@ router.get('/chats/:id', async (req, res) => {
 router.get('/pending-reviews', (req, res) => {
   try {
     const pendingReviews = getPendingReviews();
-    
+
     return res.status(200).json({
       success: true,
       reviews: pendingReviews // Changed from 'data' to 'reviews' to match frontend expectations
@@ -709,7 +709,7 @@ router.get('/pending-reviews', (req, res) => {
 router.get('/all-reviews', (req, res) => {
   try {
     const allReviews = getAllReviews();
-    
+
     return res.status(200).json({
       success: true,
       reviews: allReviews // Changed from 'data' to 'reviews' for consistency
@@ -731,7 +731,7 @@ router.get('/all-reviews', (req, res) => {
 router.post('/approve-review', (req, res) => {
   try {
     const { queue_id, reviewer_email, notes } = req.body;
-    
+
     if (!queue_id || !reviewer_email) {
       return res.status(400).json({
         error: 'MISSING_DATA',
@@ -739,9 +739,9 @@ router.post('/approve-review', (req, res) => {
         details: { reason: 'Queue ID and reviewer email are required for approval' }
       });
     }
-    
+
     const result = approveReview(queue_id, reviewer_email, notes);
-    
+
     if (!result) {
       return res.status(404).json({
         error: 'NOT_FOUND',
@@ -749,7 +749,7 @@ router.post('/approve-review', (req, res) => {
         details: { reason: 'Review with specified queue ID not found' }
       });
     }
-    
+
     return res.status(200).json({
       success: true,
       message: 'Review approved successfully'
@@ -771,7 +771,7 @@ router.post('/approve-review', (req, res) => {
 router.post('/approve-with-price', async (req, res) => {
   try {
     const { queue_id, reviewer_email, price, notes, nodePrices } = req.body;
-    
+
     if (!queue_id || !reviewer_email || !price) {
       return res.status(400).json({
         error: 'MISSING_DATA',
@@ -779,7 +779,7 @@ router.post('/approve-with-price', async (req, res) => {
         details: { reason: 'Queue ID, reviewer email, and price are required for approval' }
       });
     }
-    
+
     // Get the review item
     const reviewItem = getReviewById(queue_id);
     if (!reviewItem) {
@@ -789,11 +789,20 @@ router.post('/approve-with-price', async (req, res) => {
         details: { reason: 'Review with specified queue ID not found' }
       });
     }
-    
+
+    // Ensure generated_quote exists
+    if (!reviewItem.generated_quote) {
+      reviewItem.generated_quote = {
+        total_price: 0,
+        modifications_price: 0,
+        items: []
+      };
+    }
+
     // Update the review item with the price
     reviewItem.generated_quote.total_price = parseFloat(price);
     reviewItem.generated_quote.modifications_price = parseFloat(price);
-    
+
     // Preserve original items if they exist, otherwise create a custom modification item
     if (!reviewItem.generated_quote.items || reviewItem.generated_quote.items.length === 0) {
       reviewItem.generated_quote.items = [{
@@ -809,16 +818,16 @@ router.post('/approve-with-price', async (req, res) => {
       // For items with existing prices, keep their original prices
       reviewItem.generated_quote.items = reviewItem.generated_quote.items.map(item => {
         // If the item has zero price or requires manual review, update it with the admin-set price
-        if (item.base_price === 0 || 
-            (item.basePrice !== undefined && item.basePrice === 0) ||
-            item.requires_manual_review === true ||
-            (item.requiresManualReview !== undefined && item.requiresManualReview === true)) {
+        if (item.base_price === 0 ||
+          (item.basePrice !== undefined && item.basePrice === 0) ||
+          item.requires_manual_review === true ||
+          (item.requiresManualReview !== undefined && item.requiresManualReview === true)) {
           // Check if we have individual node pricing
           let newPrice = parseFloat(price);
           if (nodePrices && nodePrices[item.node_id || item.nodeId || item.node_label || item.node_type]) {
             newPrice = parseFloat(nodePrices[item.node_id || item.nodeId || item.node_label || item.node_type]);
           }
-          
+
           return {
             ...item,
             base_price: item.base_price === 0 ? newPrice : item.base_price,
@@ -829,12 +838,12 @@ router.post('/approve-with-price', async (req, res) => {
         return item;
       });
     }
-    
+
     reviewItem.notes = notes || `Price set by admin: $${price}`;
-    
+
     // Approve the review
     const result = approveReview(queue_id, reviewer_email, reviewItem.notes);
-    
+
     if (!result) {
       return res.status(404).json({
         error: 'NOT_FOUND',
@@ -842,7 +851,7 @@ router.post('/approve-with-price', async (req, res) => {
         details: { reason: 'Review with specified queue ID not found' }
       });
     }
-    
+
     // Send notification to customer about approval
     try {
       await sendQuoteApprovalNotification(reviewItem);
@@ -850,7 +859,7 @@ router.post('/approve-with-price', async (req, res) => {
       console.error('Error sending quote approval notification:', notificationError);
       // We don't return an error here because the approval was successful
     }
-    
+
     // Save chat data for the approved quote with complete details
     const chatData = {
       workflowId: 'workflow-' + Date.now(),
@@ -871,7 +880,7 @@ router.post('/approve-with-price', async (req, res) => {
       createdAt: new Date(),
       updatedAt: new Date()
     };
-    
+
     // If we have more detailed quote information, use it instead
     if (reviewItem.generated_quote && reviewItem.generated_quote.items) {
       chatData.items = reviewItem.generated_quote.items.map(item => ({
@@ -882,13 +891,13 @@ router.post('/approve-with-price', async (req, res) => {
         totalPrice: item.total_price !== undefined ? item.total_price : (item.totalPrice || (item.base_price !== undefined ? item.base_price : (item.basePrice || 0))),
         requiresManualReview: item.requires_manual_review !== undefined ? item.requires_manual_review : (item.requiresManualReview || false)
       }));
-      
+
       // Update pricing information
       chatData.basePrice = (reviewItem.generated_quote.total_price || 0) - (reviewItem.generated_quote.modifications_price || 0);
       chatData.modificationsPrice = reviewItem.generated_quote.modifications_price || parseFloat(price);
       chatData.totalPrice = reviewItem.generated_quote.total_price || parseFloat(price);
     }
-    
+
     try {
       const newChat = new N8nQuoteChat(chatData);
       await newChat.save();
@@ -896,18 +905,18 @@ router.post('/approve-with-price', async (req, res) => {
       console.error('Error saving chat data:', chatError);
       // We don't return an error here because the approval was successful
     }
-    
+
     // Also save to the new N8nProjectQuote model for complete project tracking
     try {
       // Try to find existing project quote by workflow ID or create new one
       let projectQuote = await N8nProjectQuote.findOne({ workflowId: reviewItem.original_request?.workflow || 'n8n-workflow.json' });
-      
+
       // Prepare customer email - filter out empty strings
       let customerEmailValue = undefined;
       if (reviewItem.customer_email && reviewItem.customer_email.trim() !== '') {
         customerEmailValue = reviewItem.customer_email.trim();
       }
-      
+
       if (!projectQuote) {
         // Create new project quote if not found
         const projectQuoteData = {
@@ -949,18 +958,18 @@ router.post('/approve-with-price', async (req, res) => {
             totalPrice: parseFloat(price),
             requiresManualReview: false
           }],
-            modifications: reviewItem.original_request?.modifications ? [{
-              description: reviewItem.original_request.modifications,
-              price: reviewItem.generated_quote.modifications_price || parseFloat(price),
-              requiresApproval: true,
-              approved: true
-            }] : [],
-            workflowData: reviewItem.original_request || null,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-            reviewedAt: new Date()
-          };
-        
+          modifications: reviewItem.original_request?.modifications ? [{
+            description: reviewItem.original_request.modifications,
+            price: reviewItem.generated_quote.modifications_price || parseFloat(price),
+            requiresApproval: true,
+            approved: true
+          }] : [],
+          workflowData: reviewItem.original_request || null,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          reviewedAt: new Date()
+        };
+
         projectQuote = new N8nProjectQuote(projectQuoteData);
       } else {
         // Update existing project quote
@@ -996,7 +1005,7 @@ router.post('/approve-with-price', async (req, res) => {
         projectQuote.updatedAt = new Date();
         projectQuote.reviewedAt = new Date();
       }
-      
+
       await projectQuote.save();
     } catch (quoteError) {
       console.error('Error saving project quote data:', quoteError);
@@ -1027,14 +1036,14 @@ router.post('/approve-with-price', async (req, res) => {
       },
       adminId: reviewer_email
     });
-    
+
     // Add the complete workflow data to the estimate for reference
     if (reviewItem.original_request) {
       pendingEstimate.workflowData = reviewItem.original_request;
     }
-    
+
     await pendingEstimate.save();
-    
+
     // Return the complete approved estimate with all details
     const approvedEstimateData = {
       _id: pendingEstimate._id,
@@ -1051,7 +1060,7 @@ router.post('/approve-with-price', async (req, res) => {
       // Include the complete workflow data
       workflowData: reviewItem.original_request
     };
-    
+
     return res.status(200).json({
       success: true,
       message: 'Review approved successfully with price set',
@@ -1059,11 +1068,17 @@ router.post('/approve-with-price', async (req, res) => {
       approvedEstimate: approvedEstimateData
     });
   } catch (error) {
-    console.error('Unexpected error approving review with price:', error);
+    console.error('❌ Unexpected error approving review with price:');
+    console.error('Error message:', error.message);
+    console.error('Error stack:', error.stack);
+    console.error('Request body:', req.body);
     return res.status(500).json({
       error: 'INTERNAL_ERROR',
       message: 'An unexpected error occurred while approving review with price',
-      details: { reason: error.message }
+      details: {
+        reason: error.message,
+        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      }
     });
   }
 });
@@ -1075,7 +1090,7 @@ router.post('/approve-with-price', async (req, res) => {
 router.post('/reject-review', (req, res) => {
   try {
     const { queue_id, reviewer_email, notes } = req.body;
-    
+
     if (!queue_id || !reviewer_email) {
       return res.status(400).json({
         error: 'MISSING_DATA',
@@ -1083,9 +1098,9 @@ router.post('/reject-review', (req, res) => {
         details: { reason: 'Queue ID and reviewer email are required for rejection' }
       });
     }
-    
+
     const result = rejectReview(queue_id, reviewer_email, notes);
-    
+
     if (!result) {
       return res.status(404).json({
         error: 'NOT_FOUND',
@@ -1093,7 +1108,7 @@ router.post('/reject-review', (req, res) => {
         details: { reason: 'Review with specified queue ID not found' }
       });
     }
-    
+
     return res.status(200).json({
       success: true,
       message: 'Review rejected successfully'
@@ -1116,7 +1131,7 @@ router.get('/project-quotes', authenticateUser, async (req, res) => {
   try {
     // Filter by userId - users only see their own quotes
     const projectQuotes = await N8nProjectQuote.find({ userId: req.user.id }).sort({ createdAt: -1 });
-    
+
     return res.status(200).json({
       success: true,
       data: projectQuotes
@@ -1139,7 +1154,7 @@ router.get('/project-quotes/:id', authenticateUser, async (req, res) => {
   try {
     const { id } = req.params;
     const projectQuote = await N8nProjectQuote.findById(id);
-    
+
     if (!projectQuote) {
       return res.status(404).json({
         error: 'NOT_FOUND',
@@ -1156,7 +1171,7 @@ router.get('/project-quotes/:id', authenticateUser, async (req, res) => {
         details: { reason: 'You can only view your own quotes' }
       });
     }
-    
+
     return res.status(200).json({
       success: true,
       data: projectQuote

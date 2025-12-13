@@ -4,7 +4,10 @@
   "title": "n8n Workflow Schema",
   "description": "Schema for validating n8n workflow export files",
   "type": "object",
-  "required": ["nodes", "connections"],
+  "required": [
+    "nodes",
+    "connections"
+  ],
   "properties": {
     "name": {
       "type": "string",
@@ -15,7 +18,9 @@
       "description": "Array of workflow nodes",
       "items": {
         "type": "object",
-        "required": ["id", "type", "name", "parameters"],
+        "required": [
+          "type"
+        ],
         "properties": {
           "id": {
             "type": "string",
@@ -55,7 +60,13 @@
               },
               "method": {
                 "type": "string",
-                "enum": ["GET", "POST", "PUT", "DELETE", "PATCH"],
+                "enum": [
+                  "GET",
+                  "POST",
+                  "PUT",
+                  "DELETE",
+                  "PATCH"
+                ],
                 "description": "HTTP method for requests"
               },
               "authentication": {
@@ -96,7 +107,9 @@
               "type": "array",
               "items": {
                 "type": "object",
-                "required": ["node", "type", "index"],
+                "required": [
+                  "node"
+                ],
                 "properties": {
                   "node": {
                     "type": "string",
@@ -123,7 +136,10 @@
       "properties": {
         "executionOrder": {
           "type": "string",
-          "enum": ["v0", "v1"],
+          "enum": [
+            "v0",
+            "v1"
+          ],
           "description": "Execution order version"
         },
         "saveExecutionProgress": {
@@ -136,12 +152,18 @@
         },
         "saveDataErrorExecution": {
           "type": "string",
-          "enum": ["all", "none"],
+          "enum": [
+            "all",
+            "none"
+          ],
           "description": "Save data on error execution"
         },
         "saveDataSuccessExecution": {
           "type": "string",
-          "enum": ["all", "none"],
+          "enum": [
+            "all",
+            "none"
+          ],
           "description": "Save data on success execution"
         }
       }

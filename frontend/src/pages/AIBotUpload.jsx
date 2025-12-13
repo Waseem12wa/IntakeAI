@@ -44,19 +44,19 @@ function FormattedMessage({ text }) {
       .replace(/## Step \d+:\s*/g, '') // Remove ## Step 1: etc
       .replace(/##\s+/g, '') // Remove remaining ##
       .replace(/# /g, ''); // Remove # headers
-    
+
     // Split by double asterisks for sections like **Summary**
     const parts = cleanText.split(/(\*\*[^*]+\*\*)/);
-    
+
     return parts.map((part, index) => {
       if (part.match(/\*\*[^*]+\*\*/)) {
         // This is a header like **Summary**
         const headerText = part.replace(/\*\*/g, '');
         return (
-          <div key={index} style={{ 
-            fontSize: '1.1rem', 
-            fontWeight: 'bold', 
-            color: '#1976d2', 
+          <div key={index} style={{
+            fontSize: '1.1rem',
+            fontWeight: 'bold',
+            color: '#1976d2',
             marginTop: index > 0 ? '20px' : '0',
             marginBottom: '12px'
           }}>
@@ -69,7 +69,7 @@ function FormattedMessage({ text }) {
         return lines.map((line, lineIndex) => {
           const trimmed = line.trim();
           if (!trimmed) return null;
-          
+
           // Check if it's a numbered question
           if (trimmed.match(/^\d+\./)) {
             return (
@@ -84,14 +84,14 @@ function FormattedMessage({ text }) {
               </div>
             );
           }
-          
+
           // Regular paragraph - limit length for better readability
           // If line is very long, we can break it into smaller chunks
           if (trimmed.length > 200) {
             // Split long paragraphs into smaller chunks
             const chunks = [];
             let currentChunk = '';
-            
+
             trimmed.split(' ').forEach((word, wordIndex) => {
               if ((currentChunk + word).length > 150 && currentChunk.length > 0) {
                 chunks.push(currentChunk.trim());
@@ -100,11 +100,11 @@ function FormattedMessage({ text }) {
                 currentChunk += (currentChunk ? ' ' : '') + word;
               }
             });
-            
+
             if (currentChunk) {
               chunks.push(currentChunk.trim());
             }
-            
+
             return chunks.map((chunk, chunkIndex) => (
               <div key={`${index}-${lineIndex}-${chunkIndex}`} style={{
                 marginBottom: chunkIndex < chunks.length - 1 ? '8px' : '16px',
@@ -115,7 +115,7 @@ function FormattedMessage({ text }) {
               </div>
             ));
           }
-          
+
           // Regular short paragraph
           return (
             <div key={`${index}-${lineIndex}`} style={{
@@ -142,13 +142,13 @@ export default function AIBotUpload() {
   const [aiMessages, setAiMessages] = useState([]);
   const [userInput, setUserInput] = useState('');
   const [estimate, setEstimate] = useState(null);
-  
+
   // File upload states
   const [uploadedFiles, setUploadedFiles] = useState([]);
   const [isDragging, setIsDragging] = useState(false);
   const [uploadLoading, setUploadLoading] = useState(false);
   const fileInputRef = useRef(null);
-  
+
   // New state for question management
   const [questions, setQuestions] = useState([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -207,49 +207,49 @@ export default function AIBotUpload() {
   // Handle n8n workflow file upload and quote generation
   const handleN8nWorkflowUpload = async () => {
     if (uploadedFiles.length === 0) return;
-    
+
     setN8nQuoteLoading(true);
     setN8nQuoteError(null);
-    
+
     try {
       // Find the first JSON file (assuming it's the n8n workflow)
       const workflowFile = uploadedFiles.find(f => f.file.type === 'application/json' || f.file.name.endsWith('.json'));
-      
+
       if (!workflowFile) {
         throw new Error('Please upload a valid JSON file exported from n8n.');
       }
-      
+
       // Step 1: Validate the workflow
       const validateData = await N8nQuoteApi.validateWorkflow(workflowFile.file);
-      
+
       if (!validateData.success) {
         throw new Error(validateData.message || 'Invalid n8n workflow file.');
       }
-      
+
       // Step 2: Generate price list
       const priceListData = await N8nQuoteApi.generatePriceList(workflowFile.file);
-      
+
       if (!priceListData.success) {
         throw new Error(priceListData.message || 'Failed to generate price list.');
       }
-      
+
       // Step 3: Build compact payload for LLM
       const payloadData = await N8nQuoteApi.buildCompactPayload(
         workflowFile.file,
         'Generate a professional quote for this n8n workflow'
       );
-      
+
       if (!payloadData.success) {
         throw new Error(payloadData.message || 'Failed to build LLM payload.');
       }
-      
+
       // Step 4: Build prompt for LLM
       const promptData = await N8nQuoteApi.buildPrompt(payloadData.data);
-      
+
       if (!promptData.success) {
         throw new Error(promptData.message || 'Failed to build LLM prompt.');
       }
-      
+
       // For now, we'll simulate the LLM response since we don't have the actual LLM integration
       // In a real implementation, you would send the prompt to your LLM service
       const simulatedLlmResponse = {
@@ -263,17 +263,17 @@ export default function AIBotUpload() {
         review_required: false,
         review_reasons: []
       };
-      
+
       setN8nQuote(simulatedLlmResponse);
-      setAiMessages([{ 
-        role: 'ai', 
+      setAiMessages([{
+        role: 'ai',
         text: `✅ **n8n Workflow Analysis Complete!**
 
 ${simulatedLlmResponse.quote.summary}
 
 **Total Price: $${simulatedLlmResponse.quote.total_price.toFixed(2)}**
 
-Would you like me to generate a detailed quote report?` 
+Would you like me to generate a detailed quote report?`
       }]);
     } catch (err) {
       setN8nQuoteError(err.message);
@@ -284,34 +284,32 @@ Would you like me to generate a detailed quote report?`
   };
 
   const handleFileUpload = async () => {
-    // Check if this is an n8n workflow file
-    const isN8nWorkflow = uploadedFiles.some(f => 
-      f.file.name.includes('n8n') || 
-      f.file.name.includes('workflow') ||
-      (f.file.type === 'application/json' && f.file.name.endsWith('.json'))
+    // Check if this is an n8n workflow file - treat all JSON files as potential workflows
+    const isN8nWorkflow = uploadedFiles.some(f =>
+      f.file.type === 'application/json' || f.file.name.endsWith('.json')
     );
-    
+
     if (isN8nWorkflow) {
       await handleN8nWorkflowUpload();
     } else {
       // Handle regular file upload (existing functionality)
       if (uploadedFiles.length === 0) return;
-      
+
       setUploadLoading(true);
-      
+
       try {
         const formData = new FormData();
         uploadedFiles.forEach(fileObj => {
           formData.append('files', fileObj.file);
         });
-        
+
         const response = await fetch('/api/ai/upload-analyze', {
           method: 'POST',
           body: formData
         });
-        
+
         const data = await response.json();
-        
+
         if (data.success) {
           // Set up conversation based on file analysis
           setAiMessages([{ role: 'ai', text: data.message }]);
@@ -319,7 +317,7 @@ Would you like me to generate a detailed quote report?`
           setCurrentQuestionIndex(0);
           setIsQuestionsMode(data.questions && data.questions.length > 0);
           setInitialAnalysis(data.message);
-          
+
           // Create a job object from file analysis
           const jobData = {
             title: data.projectTitle || 'File Analysis Project',
@@ -335,26 +333,26 @@ Would you like me to generate a detailed quote report?`
             remote: 'Remote',
             experience: '3-5'
           };
-          
+
           // Save the job to the database
           const jobResponse = await fetch('/api/jobs', {
             method: 'POST',
             headers: getAuthHeaders(),
             body: JSON.stringify(jobData)
           });
-          
+
           const jobResult = await jobResponse.json();
-          
+
           if (jobResult.success) {
             setJob(jobResult.data);
-            
+
             // Reset other states
             setEstimate(data.estimate);
             setEstimateSubmitted(false);
             setAdminApprovalStatus(null);
             setApprovedEstimate(null);
             setAdminNotes('');
-            
+
             // Save initial progress after job is created
             if (jobResult.data._id || jobResult.data.id) {
               try {
@@ -372,7 +370,7 @@ Would you like me to generate a detailed quote report?`
                 console.error('Error saving initial progress:', err);
               }
             }
-            
+
             console.log('File upload analysis completed:', {
               questionsCount: data.questions?.length || 0,
               estimate: data.estimate,
@@ -402,24 +400,24 @@ Would you like me to generate a detailed quote report?`
         });
         if (!res.ok) throw new Error('Failed to fetch job');
         const data = await res.json();
-        
+
         const jobData = data.job || data.data || data;
         setJob(jobData); // ✅ Set the job state
-        
+
         // 🔍 Check for existing conversation first
         console.log('🔍 Checking for existing conversation for job:', jobData._id || jobData.id);
         const existingRes = await fetch(`/api/ai/conversation/${jobData._id || jobData.id}`, {
           headers: getAuthHeaders()
         });
         const existingData = await existingRes.json();
-        
+
         console.log('📋 Existing conversation response:', existingData);
 
         if (existingData.success && existingData.hasExisting) {
           // 🔄 Restore existing conversation state
           console.log('🔄 Restoring existing conversation state');
           const conversation = existingData.conversation;
-          
+
           setAiMessages(conversation.messages || []);
           setAnswers(conversation.answers || []);
           setEstimateSubmitted(conversation.estimateSubmitted || false);
@@ -428,12 +426,12 @@ Would you like me to generate a detailed quote report?`
           setFinalEstimateGiven(conversation.finalEstimateGiven || false);
           setInitialAnalysis(conversation.initialAnalysis || '');
           setFinalAnalysis(conversation.finalAnalysis || '');
-          
+
           // If all questions were answered, don't show questions mode
           if (conversation.answers && conversation.answers.length > 0) {
             setIsQuestionsMode(false);
             setCurrentQuestionIndex(conversation.answers.length); // Set to completed
-            
+
             console.log('✅ Successfully restored conversation state:', {
               messagesCount: conversation.messages?.length || 0,
               answersCount: conversation.answers?.length || 0,
@@ -441,40 +439,40 @@ Would you like me to generate a detailed quote report?`
               status: conversation.adminApprovalStatus
             });
           }
-          
+
           return; // Don't fetch new analysis if existing conversation found
         }
-        
+
         // 🆕 No existing conversation, proceed with fresh analysis
         console.log('🆕 No existing conversation found, getting fresh analysis');
-        
+
         // 🔹 ALWAYS pass initial=true for the first load to ensure consistent behavior
         const aiRes = await fetch('/api/ai/analyzeJob', {
           method: 'POST',
           headers: getAuthHeaders(),
-          body: JSON.stringify({ 
-            job: jobData, 
+          body: JSON.stringify({
+            job: jobData,
             initial: true  // ← Always true on first load to prevent reload issues
           })
         });
         const aiData = await aiRes.json();
 
         console.log('Frontend received from analyzeJob:', aiData);
-        
+
         if (aiData.success) {
           // Set up new conversation
           setAiMessages([{ role: 'ai', text: aiData.message }]);
           setQuestions(aiData.questions || []);
           setCurrentQuestionIndex(0);
           setIsQuestionsMode(aiData.questions && aiData.questions.length > 0);
-          
+
           // Reset estimate state
           setEstimate(aiData.estimate);
           setEstimateSubmitted(false);
           setAdminApprovalStatus(null);
           setApprovedEstimate(null);
           setAdminNotes('');
-          
+
           // Save initial progress
           if (jobData._id || jobData.id) {
             try {
@@ -493,7 +491,7 @@ Would you like me to generate a detailed quote report?`
               console.error('Error saving initial progress:', err);
             }
           }
-          
+
           console.log('Intialized new conversation with:', {
             questionsCount: aiData.questions?.length || 0,
             estimate: aiData.estimate
@@ -505,7 +503,7 @@ Would you like me to generate a detailed quote report?`
         setAiMessages([{ role: 'ai', text: 'Error: ' + err.message }]);
       }
     };
-    
+
     fetchJob();
   }, [id]); // Only depend on id to prevent unnecessary re-renders
 
@@ -520,23 +518,23 @@ Would you like me to generate a detailed quote report?`
             headers: getAuthHeaders()
           });
           const data = await res.json();
-          
+
           console.log('Approval status check response:', data);
-          
+
           if (data.success && data.estimate) {
             // Only update if status has changed
             if (data.estimate.status !== adminApprovalStatus) {
               setAdminApprovalStatus(data.estimate.status);
               setApprovedEstimate(data.estimate.finalEstimate);
               setAdminNotes(data.estimate.adminNotes || '');
-              
+
               // Show approval notification using global context
               showApprovalNotification(
                 data.estimate.status,
                 job?.title || 'Your Project',
                 job?._id || job?.id
               );
-              
+
               // Show final approved message
               let statusMessage = '';
               if (data.estimate.status === 'approved') {
@@ -544,13 +542,13 @@ Would you like me to generate a detailed quote report?`
               } else if (data.estimate.status === 'edited') {
                 statusMessage = '✏️ **Estimate Edited by Admin!**';
               }
-              
+
               if (statusMessage) {
-                setAiMessages((prev) => [...prev, { 
-                  role: 'ai', 
+                setAiMessages((prev) => [...prev, {
+                  role: 'ai',
                   text: statusMessage
                 }]);
-                
+
                 setFinalEstimateGiven(true);
               }
             }
@@ -573,14 +571,14 @@ Would you like me to generate a detailed quote report?`
   // Handle answering questions one by one
   const handleQuestionAnswer = async () => {
     if (!userInput.trim() || !isQuestionsMode) return;
-    
+
     // Add user's answer to the conversation
     setAiMessages((prev) => [...prev, { role: 'user', text: userInput }]);
-    
+
     // Store the answer
     const newAnswers = [...answers, { question: questions[currentQuestionIndex], answer: userInput }];
     setAnswers(newAnswers);
-    
+
     const currentAnswer = userInput;
     setUserInput('');
 
@@ -607,10 +605,10 @@ Would you like me to generate a detailed quote report?`
       // Show next question
       const nextIndex = currentQuestionIndex + 1;
       setCurrentQuestionIndex(nextIndex);
-      
-      setAiMessages((prev) => [...prev, { 
-        role: 'ai', 
-        text: `**Question ${nextIndex + 1}:**\n\n${questions[nextIndex]}` 
+
+      setAiMessages((prev) => [...prev, {
+        role: 'ai',
+        text: `**Question ${nextIndex + 1}:**\n\n${questions[nextIndex]}`
       }]);
     } else {
       // All questions answered, get final response
@@ -620,30 +618,30 @@ Would you like me to generate a detailed quote report?`
           jobTitle: job?.title,
           answersCount: newAnswers.length
         });
-        
+
         const res = await fetch('/api/ai/finalizeEstimate', {
           method: 'POST',
           headers: getAuthHeaders(),
-          body: JSON.stringify({ 
+          body: JSON.stringify({
             job: job || {}, // Ensure job is not null/undefined
             answers: newAnswers,
             originalEstimate: estimate // Include the original estimate
           })
         });
         const data = await res.json();
-        
+
         if (data.success) {
           if (data.adminApprovalRequired) {
-            const approvalMessage = { 
-              role: 'ai', 
-              text: `${data.message}\n\n**📋 Estimate submitted for admin approval. You will be notified once approved.**` 
+            const approvalMessage = {
+              role: 'ai',
+              text: `${data.message}\n\n**📋 Estimate submitted for admin approval. You will be notified once approved.**`
             };
             const updatedMessages = [...aiMessages, approvalMessage];
             setAiMessages(updatedMessages);
             setFinalAnalysis(data.message);
             setEstimateSubmitted(true);
             setAdminApprovalStatus('pending');
-            
+
             // Save conversation progress
             if (job && (job._id || job.id)) {
               try {
@@ -661,15 +659,15 @@ Would you like me to generate a detailed quote report?`
               }
             }
           } else {
-            const estimateMessage = { 
-              role: 'ai', 
-              text: `${data.message}\n\n**💰 Final Estimate:** ${data.estimate}` 
+            const estimateMessage = {
+              role: 'ai',
+              text: `${data.message}\n\n**💰 Final Estimate:** ${data.estimate}`
             };
             const updatedMessages = [...aiMessages, estimateMessage];
             setAiMessages(updatedMessages);
             setFinalAnalysis(data.message);
             setFinalEstimateGiven(true);
-            
+
             // Save conversation progress
             if (job && (job._id || job.id)) {
               try {
@@ -691,7 +689,7 @@ Would you like me to generate a detailed quote report?`
           const errorMessage = { role: 'ai', text: 'Error: ' + (data.error || 'Failed to finalize estimate.') };
           const updatedMessages = [...aiMessages, errorMessage];
           setAiMessages(updatedMessages);
-          
+
           // Save conversation progress even for errors
           if (job && (job._id || job.id)) {
             try {
@@ -711,7 +709,7 @@ Would you like me to generate a detailed quote report?`
       } catch (err) {
         setAiMessages((prev) => [...prev, { role: 'ai', text: 'Error: ' + err.message }]);
       }
-      
+
       setIsQuestionsMode(false); // Exit questions mode
     }
   };
@@ -723,7 +721,7 @@ Would you like me to generate a detailed quote report?`
     const updatedMessages = [...aiMessages, userMessage];
     setAiMessages(updatedMessages);
     setUserInput('');
-    
+
     try {
       const res = await fetch('/api/ai/chat', {
         method: 'POST',
@@ -732,12 +730,12 @@ Would you like me to generate a detailed quote report?`
       });
       const data = await res.json();
       console.log('Frontend received from chat:', data);
-      
+
       if (data.success) {
         const aiMessage = { role: 'ai', text: data.message };
         const finalMessages = [...updatedMessages, aiMessage];
         setAiMessages(finalMessages);
-        
+
         // Save conversation progress for general chat
         if (job && (job._id || job.id)) {
           try {
@@ -757,7 +755,7 @@ Would you like me to generate a detailed quote report?`
         const errorMessage = { role: 'ai', text: 'Error: ' + (data.error || 'Failed to get response.') };
         const finalMessages = [...updatedMessages, errorMessage];
         setAiMessages(finalMessages);
-        
+
         // Save conversation progress even for errors
         if (job && (job._id || job.id)) {
           try {
@@ -778,7 +776,7 @@ Would you like me to generate a detailed quote report?`
       const errorMessage = { role: 'ai', text: 'Error: ' + err.message };
       const finalMessages = [...updatedMessages, errorMessage];
       setAiMessages(finalMessages);
-      
+
       // Save conversation progress even for errors
       if (job && (job._id || job.id)) {
         try {
@@ -836,7 +834,7 @@ Would you like me to generate a detailed quote report?`
         doc.setFont(undefined, 'normal');
       }
       doc.setTextColor(color);
-      
+
       const lines = doc.splitTextToSize(text, maxWidth);
       lines.forEach((line) => {
         if (yPosition > 280) { // Near bottom of page
@@ -940,7 +938,7 @@ Would you like me to generate a detailed quote report?`
   // Generate and download Markdown
   const downloadMarkdown = () => {
     const data = createReportData();
-    
+
     // Helper to clean text for Markdown
     const cleanMdText = (text) => text.replace(/\*\*/g, '').replace(/## Step \d+:/g, '').trim();
 
@@ -995,18 +993,18 @@ Would you like me to generate a detailed quote report?`
   return (
     <>
       {/* ChatGPT-style Interface */}
-      <div style={{ 
+      <div style={{
         background: '#ffffff',
-        minHeight: '100vh', 
+        minHeight: '100vh',
         display: 'flex',
         flexDirection: 'column',
-        fontFamily: "'Segoe UI', 'San Francisco', -apple-system, BlinkMacSystemFont, sans-serif" 
+        fontFamily: "'Segoe UI', 'San Francisco', -apple-system, BlinkMacSystemFont, sans-serif"
       }}>
-        
+
         {/* Top Header */}
         <div style={{
           borderBottom: '1px solid #e5e5e5',
-          padding: '12px 16px',
+          padding: '20px 16px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -1015,28 +1013,16 @@ Would you like me to generate a detailed quote report?`
           top: 0,
           zIndex: 100
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <div style={{
-              width: '32px',
-              height: '32px',
-              background: '#10a37f',
-              borderRadius: '6px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: 'white',
-              fontSize: '18px',
-              fontWeight: '600'
-            }}>
-              AI
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: '28px', fontWeight: '600', color: '#000000', marginBottom: '8px' }}>
+              <span style={{ color: '#0814beff' }}>IntakeAI Project Estimator</span>
             </div>
-            <div>
-              <div style={{ fontWeight: '600', fontSize: '16px', color: '#343541', textAlign: 'center' }}>
-                IntakeAI Project Estimator
-              </div>
-              <div style={{ fontSize: '12px', color: '#8e8ea0', textAlign: 'center' }}>
-                {job ? `Analyzing: ${job.title}` : 'Upload files or chat for AI-powered project analysis'}
-              </div>
+            <div style={{ fontSize: '14px', color: '#666666' }}>
+              {job ? (
+                <>Analyzing: <span style={{ color: '#1976d2', fontWeight: '600' }}>{job.title}</span></>
+              ) : (
+                <>Upload files or chat for <span style={{ color: '#1976d2', fontWeight: '600' }}>AI</span>-powered project analysis</>
+              )}
             </div>
           </div>
         </div>
@@ -1130,10 +1116,10 @@ Would you like me to generate a detailed quote report?`
                       }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                           <span style={{ fontSize: '20px' }}>
-                            {file.type.includes('image') ? '🖼️' : 
-                             file.type.includes('pdf') ? '📄' : 
-                             file.type.includes('json') ? '⚙️' : 
-                             file.type.includes('text') ? '📝' : '📎'}
+                            {file.type.includes('image') ? '🖼️' :
+                              file.type.includes('pdf') ? '📄' :
+                                file.type.includes('json') ? '⚙️' :
+                                  file.type.includes('text') ? '📝' : '📎'}
                           </span>
                           <div>
                             <div style={{ fontSize: '14px', fontWeight: '500', color: '#343541' }}>
@@ -1163,7 +1149,7 @@ Would you like me to generate a detailed quote report?`
                       </div>
                     ))}
                   </div>
-                  
+
                   {/* Analyze Files Button */}
                   <button
                     onClick={handleFileUpload}
@@ -1199,7 +1185,7 @@ Would you like me to generate a detailed quote report?`
                       '🚀 Analyze Files with AI'
                     )}
                   </button>
-                  
+
                   {n8nQuoteError && (
                     <div style={{
                       marginTop: '12px',
@@ -1256,30 +1242,30 @@ Would you like me to generate a detailed quote report?`
                       remote: 'Remote',
                       experience: '3-5'
                     };
-                    
-                     try {
-                       // Save the job to the database
-                       const jobResponse = await fetch('/api/jobs', {
-                         method: 'POST',
-                         headers: getAuthHeaders(),
-                         body: JSON.stringify(defaultJobData)
-                       });
-                      
+
+                    try {
+                      // Save the job to the database
+                      const jobResponse = await fetch('/api/jobs', {
+                        method: 'POST',
+                        headers: getAuthHeaders(),
+                        body: JSON.stringify(defaultJobData)
+                      });
+
                       const jobResult = await jobResponse.json();
-                      
+
                       if (jobResult.success) {
                         setJob(jobResult.data);
-                        setAiMessages([{ 
-                          role: 'ai', 
-                          text: 'Hello! I\'m your AI project estimator. Please tell me about your project requirements and I\'ll help you get an accurate estimate. What kind of project are you planning?' 
+                        setAiMessages([{
+                          role: 'ai',
+                          text: 'Hello! I\'m your AI project estimator. Please tell me about your project requirements and I\'ll help you get an accurate estimate. What kind of project are you planning?'
                         }]);
                       } else {
                         throw new Error(jobResult.message || 'Failed to create job');
                       }
                     } catch (err) {
-                      setAiMessages([{ 
-                        role: 'ai', 
-                        text: 'Error creating project: ' + err.message 
+                      setAiMessages([{
+                        role: 'ai',
+                        text: 'Error creating project: ' + err.message
                       }]);
                     }
                   }}
@@ -1311,7 +1297,7 @@ Would you like me to generate a detailed quote report?`
             }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
                 {aiMessages.map((msg, idx) => (
-                  <div key={idx} style={{ 
+                  <div key={idx} style={{
                     display: 'flex',
                     gap: '12px',
                     alignItems: 'flex-start',
@@ -1335,7 +1321,7 @@ Would you like me to generate a detailed quote report?`
                         AI
                       </div>
                     )}
-                    
+
                     {/* Message Content */}
                     <div style={{
                       maxWidth: '70%',
@@ -1356,7 +1342,7 @@ Would you like me to generate a detailed quote report?`
                         {msg.role === 'ai' ? <FormattedMessage text={msg.text} /> : msg.text}
                       </div>
                     </div>
-                    
+
                     {/* Avatar - only show for user messages on the right */}
                     {msg.role === 'user' && (
                       <div style={{
@@ -1397,11 +1383,11 @@ Would you like me to generate a detailed quote report?`
                   value={userInput}
                   onChange={e => setUserInput(e.target.value)}
                   placeholder={isQuestionsMode ? "Type your answer here..." : "Ask me anything about your project..."}
-                  style={{ 
+                  style={{
                     width: '100%',
-                    padding: '14px 16px', 
-                    borderRadius: '12px', 
-                    border: '2px solid #e9ecef', 
+                    padding: '14px 16px',
+                    borderRadius: '12px',
+                    border: '2px solid #e9ecef',
                     fontSize: 16,
                     outline: 'none',
                     transition: 'border-color 0.3s ease',
@@ -1415,16 +1401,16 @@ Would you like me to generate a detailed quote report?`
               <button
                 onClick={handleSend}
                 disabled={!userInput.trim()}
-                style={{ 
-                  background: !userInput.trim() 
-                    ? '#e9ecef' 
-                    : 'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)', 
-                  color: !userInput.trim() ? '#6c757d' : '#ffffff', 
-                  padding: '14px 24px', 
-                  border: 'none', 
-                  borderRadius: '12px', 
-                  fontWeight: '700', 
-                  fontSize: '14px', 
+                style={{
+                  background: !userInput.trim()
+                    ? '#e9ecef'
+                    : 'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)',
+                  color: !userInput.trim() ? '#6c757d' : '#ffffff',
+                  padding: '14px 24px',
+                  border: 'none',
+                  borderRadius: '12px',
+                  fontWeight: '700',
+                  fontSize: '14px',
                   cursor: !userInput.trim() ? 'not-allowed' : 'pointer',
                   transition: 'all 0.3s ease',
                   boxShadow: !userInput.trim() ? 'none' : '0 4px 15px rgba(25, 118, 210, 0.3)',
@@ -1438,7 +1424,7 @@ Would you like me to generate a detailed quote report?`
 
           {/* Pending Approval Status */}
           {estimateSubmitted && adminApprovalStatus === 'pending' && (
-            <div style={{ 
+            <div style={{
               margin: '20px 16px',
               padding: '16px',
               background: '#fff3cd',
@@ -1486,7 +1472,7 @@ Would you like me to generate a detailed quote report?`
 
           {/* Admin Notes Section */}
           {(adminApprovalStatus === 'approved' || adminApprovalStatus === 'edited') && adminNotes && (
-            <div style={{ 
+            <div style={{
               margin: '20px 16px',
               padding: '16px',
               background: '#d1f2eb',
@@ -1512,19 +1498,19 @@ Would you like me to generate a detailed quote report?`
                 }}>
                   📝
                 </div>
-                <div style={{ 
-                  fontSize: '16px', 
-                  fontWeight: '600', 
+                <div style={{
+                  fontSize: '16px',
+                  fontWeight: '600',
                   color: '#047857'
                 }}>
                   Admin Review Notes
                 </div>
               </div>
-              <div style={{ 
+              <div style={{
                 background: 'rgba(255, 255, 255, 0.8)',
                 borderRadius: '8px',
                 padding: '12px',
-                fontSize: '14px', 
+                fontSize: '14px',
                 color: '#065f46',
                 lineHeight: '1.5'
               }}>
@@ -1535,7 +1521,7 @@ Would you like me to generate a detailed quote report?`
 
           {/* Download Buttons Section */}
           {finalEstimateGiven && (adminApprovalStatus === 'approved' || adminApprovalStatus === 'edited') && (
-            <div style={{ 
+            <div style={{
               margin: '20px 16px',
               padding: '20px',
               background: '#f0f9ff',
@@ -1557,17 +1543,17 @@ Would you like me to generate a detailed quote report?`
               }}>
                 🎉
               </div>
-              <h3 style={{ 
-                fontSize: '18px', 
-                fontWeight: '600', 
-                color: '#0c4a6e', 
-                margin: '0 0 8px 0' 
+              <h3 style={{
+                fontSize: '18px',
+                fontWeight: '600',
+                color: '#0c4a6e',
+                margin: '0 0 8px 0'
               }}>
                 Estimate Approved!
               </h3>
-              <p style={{ 
-                fontSize: '14px', 
-                color: '#075985', 
+              <p style={{
+                fontSize: '14px',
+                color: '#075985',
                 margin: '0 0 20px 0'
               }}>
                 Your project estimate has been approved. Download your report below:
@@ -1575,7 +1561,7 @@ Would you like me to generate a detailed quote report?`
               <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', flexWrap: 'wrap' }}>
                 <button
                   onClick={generatePDF}
-                  style={{ 
+                  style={{
                     background: '#0ea5e9',
                     color: 'white',
                     padding: '10px 16px',
@@ -1596,7 +1582,7 @@ Would you like me to generate a detailed quote report?`
                 </button>
                 <button
                   onClick={downloadMarkdown}
-                  style={{ 
+                  style={{
                     background: '#10a37f',
                     color: 'white',
                     padding: '10px 16px',
