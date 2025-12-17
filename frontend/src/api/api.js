@@ -1,5 +1,24 @@
 import axios from 'axios';
 
+// Configure axios base URL based on environment
+const API_BASE_URL = import.meta.env.PROD
+	? 'https://intakeai.onrender.com'  // Production: your deployed backend
+	: '';  // Development: use proxy from vite.config.js
+
+axios.defaults.baseURL = API_BASE_URL;
+
+// Add request interceptor for debugging
+axios.interceptors.request.use(
+	(config) => {
+		console.log('API Request:', config.method?.toUpperCase(), config.url);
+		return config;
+	},
+	(error) => {
+		return Promise.reject(error);
+	}
+);
+
+
 // Chat submission
 export async function submitConversation(conversation) {
 	const res = await axios.post('/api/chat/submit', { conversation });
@@ -58,21 +77,21 @@ export async function getJob(id, token) {
 // ====== ESTIMATES API ======
 
 export const listPendingEstimates = async (token) => {
-  const res = await fetch('/api/estimates/pending', {
-    headers: { Authorization: `Bearer ${token}` }
-  });
-  if (!res.ok) throw new Error('Failed to fetch estimates');
-  return res.json();
+	const res = await fetch('/api/estimates/pending', {
+		headers: { Authorization: `Bearer ${token}` }
+	});
+	if (!res.ok) throw new Error('Failed to fetch estimates');
+	return res.json();
 };
 
 export const approveEstimate = async (id, token) => {
-  const res = await fetch(`/api/estimates/approve/${id}`, {
-    method: 'PUT',
-    headers: { 
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}` 
-    }
-  });
-  if (!res.ok) throw new Error('Failed to approve estimate');
-  return res.json();
+	const res = await fetch(`/api/estimates/approve/${id}`, {
+		method: 'PUT',
+		headers: {
+			'Content-Type': 'application/json',
+			Authorization: `Bearer ${token}`
+		}
+	});
+	if (!res.ok) throw new Error('Failed to approve estimate');
+	return res.json();
 };
