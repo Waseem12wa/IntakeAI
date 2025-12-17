@@ -98,6 +98,7 @@ select {
   box-sizing: border-box;
   font-size: 16px; /* Prevents zoom on iOS */
   padding: 0.75rem 1rem;
+  min-height: 44px;
 }
 
 /* Responsive Tables */
@@ -173,4 +174,111 @@ select {
   .mobile-full-width {
     width: 100% !important;
   }
+}
+
+/* Responsive Sidebar Layout */
+.sidebar-layout {
+  display: flex;
+  flex-direction: column;
+}
+
+@media (min-width: 768px) {
+  .sidebar-layout {
+    flex-direction: row;
+  }
+}
+
+.sidebar {
+  width: 100%;
+}
+
+@media (min-width: 768px) {
+  .sidebar {
+    width: 250px;
+    min-width: 250px;
+  }
+}
+
+/* Mobile Stack */
+@media (max-width: 767px) {
+  .mobile-stack {
+    flex-direction: column !important;
+  }
+  
+  .mobile-stack > * {
+    width: 100% !important;
+  }
+}
+
+/* Responsive Text Alignment */
+@media (max-width: 767px) {
+  .mobile-text-center {
+    text-align: center !important;
+  }
+}
+
+/* Responsive Padding */
+.responsive-padding {
+  padding: clamp(1rem, 3vw, 2rem);
+}
+
+.responsive-padding-x {
+  padding-left: clamp(1rem, 4vw, 3rem);
+  padding-right: clamp(1rem, 4vw, 3rem);
+}
+
+.responsive-padding-y {
+  padding-top: clamp(1rem, 3vw, 2rem);
+  padding-bottom: clamp(1rem, 3vw, 2rem);
+}
+
+/* Responsive Margin */
+.responsive-margin {
+  margin: clamp(1rem, 3vw, 2rem);
+}
+
+.responsive-margin-x {
+  margin-left: clamp(1rem, 4vw, 3rem);
+  margin-right: clamp(1rem, 4vw, 3rem);
+}
+
+.responsive-margin-y {
+  margin-top: clamp(1rem, 3vw, 2rem);
+  margin-bottom: clamp(1rem, 3vw, 2rem);
+}
+
+/* Responsive Gap */
+.responsive-gap {
+  gap: clamp(0.5rem, 2vw, 1.5rem);
+}
+
+/* Mobile Menu Utilities */
+@media (max-width: 767px) {
+  .mobile-menu-hidden {
+    display: none;
+  }
+}
+
+/* Responsive Image */
+.responsive-image {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Responsive Video */
+.responsive-video {
+  position: relative;
+  padding-bottom: 56.25%; /* 16:9 aspect ratio */
+  height: 0;
+  overflow: hidden;
+}
+
+.responsive-video iframe,
+.responsive-video video {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
 }

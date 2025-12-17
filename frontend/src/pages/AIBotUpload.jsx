@@ -303,14 +303,27 @@ Would you like me to generate a detailed quote report?`
           formData.append('files', fileObj.file);
         });
 
+        console.log('📤 Uploading files for analysis...');
+
         const response = await fetch('/api/ai/upload-analyze', {
           method: 'POST',
           body: formData
         });
 
+        if (!response.ok) {
+          throw new Error(`Upload failed: ${response.status} ${response.statusText}`);
+        }
+
         const data = await response.json();
+        console.log('📥 Upload response:', data);
 
         if (data.success) {
+          // Validate response data
+          if (!data.message) {
+            console.warn('⚠️ No message in response, using default');
+            data.message = 'File uploaded successfully. Analyzing...';
+          }
+
           // Set up conversation based on file analysis
           setAiMessages([{ role: 'ai', text: data.message }]);
           setQuestions(data.questions || []);
@@ -334,6 +347,8 @@ Would you like me to generate a detailed quote report?`
             experience: '3-5'
           };
 
+          console.log('💾 Creating job from file analysis...');
+
           // Save the job to the database
           const jobResponse = await fetch('/api/jobs', {
             method: 'POST',
@@ -341,9 +356,14 @@ Would you like me to generate a detailed quote report?`
             body: JSON.stringify(jobData)
           });
 
-          const jobResult = await jobResponse.json();
+          if (!jobResponse.ok) {
+            throw new Error(`Failed to create job: ${jobResponse.status}`);
+          }
 
-          if (jobResult.success) {
+          const jobResult = await jobResponse.json();
+          console.log('✅ Job created:', jobResult);
+
+          if (jobResult.success && jobResult.data) {
             setJob(jobResult.data);
 
             // Reset other states
@@ -366,29 +386,37 @@ Would you like me to generate a detailed quote report?`
                     answers: []
                   })
                 });
+                console.log('💾 Progress saved');
               } catch (err) {
-                console.error('Error saving initial progress:', err);
+                console.error('❌ Error saving initial progress:', err);
               }
             }
 
-            console.log('File upload analysis completed:', {
+            console.log('✅ File upload analysis completed:', {
               questionsCount: data.questions?.length || 0,
               estimate: data.estimate,
               jobId: jobResult.data._id
             });
           } else {
-            throw new Error(jobResult.message || 'Failed to create job');
+            throw new Error(jobResult.message || 'Failed to create job - no data returned');
           }
         } else {
-          setAiMessages([{ role: 'ai', text: 'Error analyzing files: ' + (data.error || 'Failed to process files.') }]);
+          const errorMsg = data.error || data.message || 'Failed to process files.';
+          console.error('❌ Upload failed:', errorMsg);
+          setAiMessages([{ role: 'ai', text: 'Error analyzing files: ' + errorMsg }]);
         }
       } catch (err) {
-        setAiMessages([{ role: 'ai', text: 'Error uploading files: ' + err.message }]);
+        console.error('❌ File upload error:', err);
+        setAiMessages([{
+          role: 'ai',
+          text: `Error uploading files: ${err.message}\n\nPlease try again or contact support if the issue persists.`
+        }]);
       } finally {
         setUploadLoading(false);
       }
     }
   };
+
 
   // Fetch job info if opened with /ai-bot-upload/:id
   useEffect(() => {

@@ -61,7 +61,7 @@ export default function Register() {
     try {
       if (isLoginMode) {
         const res = await loginUser({ email, password });
-        
+
         // Store authentication data
         if (res.token && res.user) {
           login(res.user, res.token);
@@ -92,12 +92,12 @@ export default function Register() {
 
         const res = await registerUser(payload);
         setSuccess(res.message || 'Registration successful!');
-        
+
         // Store authentication data if token is provided
         if (res.token && res.user) {
           login(res.user, res.token);
         }
-        
+
         // ---- MODIFICATION START ----
         // Conditionally navigate based on the account type
         if (accountType === 'company') {
@@ -127,30 +127,32 @@ export default function Register() {
   };
 
   return (
-    <div style={{ 
-      background: '#f8f9fa', 
+    <div style={{
+      background: '#f8f9fa',
       minHeight: '100vh',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      padding: '120px 20px 20px 20px', // Added top padding for fixed header
+      padding: 'clamp(80px, 15vw, 120px) clamp(16px, 4vw, 20px) clamp(16px, 4vw, 20px) clamp(16px, 4vw, 20px)',
       fontFamily: "'Google Sans', 'Roboto', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif"
     }}>
       <div style={{
         background: '#ffffff',
-        borderRadius: '24px',
+        borderRadius: 'clamp(12px, 3vw, 24px)',
         boxShadow: '0 20px 40px rgba(0,0,0,0.1)',
         display: 'flex',
+        flexDirection: window.innerWidth < 768 ? 'column' : 'row',
         maxWidth: '1000px',
         width: '100%',
         overflow: 'hidden'
       }}>
-        
-        {/* Left Section - Light Blue Background */}
+
+        {/* Left Section - Light Blue Background - Hidden on mobile */}
         <div style={{
-          flex: '1',
+          flex: window.innerWidth < 768 ? '0' : '1',
+          display: window.innerWidth < 768 ? 'none' : 'block',
           background: '#e6f3ff',
-          padding: '60px 40px',
+          padding: 'clamp(30px, 6vw, 60px) clamp(20px, 4vw, 40px)',
           color: '#000000',
           position: 'relative'
         }}>
@@ -159,18 +161,18 @@ export default function Register() {
             display: 'flex',
             alignItems: 'center',
             gap: '12px',
-            marginBottom: '60px'
+            marginBottom: 'clamp(30px, 6vw, 60px)'
           }}>
-            <img 
-              src="/LOGO.png" 
-              alt="Company Logo" 
-              style={{ 
-                height: '40px',
+            <img
+              src="/LOGO.png"
+              alt="Company Logo"
+              style={{
+                height: 'clamp(30px, 6vw, 40px)',
                 objectFit: 'contain'
-              }} 
+              }}
             />
             <span style={{
-              fontSize: '24px',
+              fontSize: 'clamp(18px, 4vw, 24px)',
               fontWeight: 700,
               color: '#000000'
             }}>
@@ -181,14 +183,14 @@ export default function Register() {
           {/* Left Section Text */}
           <div style={{ marginBottom: '40px' }}>
             <div style={{
-              fontSize: '16px',
+              fontSize: 'clamp(14px, 2vw, 16px)',
               marginBottom: '8px',
               opacity: 0.9
             }}>
               {isLoginMode ? 'Welcome Back 👋' : 'Join Us to Build 🛠️'}
             </div>
             <h1 style={{
-              fontSize: '3rem',
+              fontSize: 'clamp(2rem, 6vw, 3rem)',
               fontWeight: 800,
               margin: '0 0 16px 0',
               lineHeight: '1.2'
@@ -196,7 +198,7 @@ export default function Register() {
               {isLoginMode ? 'Sign In to Continue' : 'Start your Journey'}
             </h1>
             <p style={{
-              fontSize: '18px',
+              fontSize: 'clamp(14px, 2vw, 18px)',
               opacity: 0.9,
               lineHeight: '1.5'
             }}>
@@ -208,7 +210,8 @@ export default function Register() {
           <div style={{
             display: 'flex',
             gap: '16px',
-            marginTop: '60px'
+            marginTop: 'clamp(30px, 6vw, 60px)',
+            flexWrap: 'wrap'
           }}>
             {/* Step 1 - Active */}
             <div style={{
@@ -216,6 +219,7 @@ export default function Register() {
               borderRadius: '12px',
               padding: '20px',
               flex: '1',
+              minWidth: '120px',
               textAlign: 'center'
             }}>
               <div style={{
@@ -248,6 +252,7 @@ export default function Register() {
               borderRadius: '12px',
               padding: '20px',
               flex: '1',
+              minWidth: '120px',
               textAlign: 'center'
             }}>
               <div style={{
@@ -280,6 +285,7 @@ export default function Register() {
               borderRadius: '12px',
               padding: '20px',
               flex: '1',
+              minWidth: '120px',
               textAlign: 'center'
             }}>
               <div style={{
@@ -311,23 +317,51 @@ export default function Register() {
         {/* Right Section - Form */}
         <div style={{
           flex: '1',
-          padding: '60px 40px',
-          background: '#ffffff'
+          padding: 'clamp(30px, 6vw, 60px) clamp(20px, 4vw, 40px)',
+          background: '#ffffff',
+          minWidth: window.innerWidth < 768 ? '100%' : 'auto'
         }}>
+          {/* Mobile Logo - Only shown on mobile */}
+          {window.innerWidth < 768 && (
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '12px',
+              marginBottom: '24px'
+            }}>
+              <img
+                src="/LOGO.png"
+                alt="Company Logo"
+                style={{
+                  height: '35px',
+                  objectFit: 'contain'
+                }}
+              />
+              <span style={{
+                fontSize: '20px',
+                fontWeight: 700,
+                color: '#000000'
+              }}>
+                IntakeAI
+              </span>
+            </div>
+          )}
+
           <h2 style={{
-            fontSize: '2.5rem',
+            fontSize: 'clamp(1.75rem, 5vw, 2.5rem)',
             fontWeight: 700,
             color: '#000000',
-            margin: '0 0 40px 0',
+            margin: '0 0 clamp(24px, 5vw, 40px) 0',
             textAlign: 'center'
           }}>
             {isLoginMode ? 'Welcome Back' : 'Join Us'}
           </h2>
 
-          <form onSubmit={handleSubmit} style={{ maxWidth: '400px', margin: '0 auto' }}>
+          <form onSubmit={handleSubmit} style={{ maxWidth: '400px', margin: '0 auto', width: '100%' }}>
             {/* Account type toggle (register mode only) */}
             {!isLoginMode && (
-              <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', justifyContent: 'center' }}>
+              <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', justifyContent: 'center', flexWrap: 'wrap' }}>
                 <button
                   type="button"
                   onClick={() => setAccountType('company')}
@@ -336,7 +370,9 @@ export default function Register() {
                     borderRadius: '8px',
                     border: accountType === 'company' ? '2px solid #667eea' : '1px solid #e5e7eb',
                     background: accountType === 'company' ? '#eef2ff' : '#ffffff',
-                    cursor: 'pointer'
+                    cursor: 'pointer',
+                    fontSize: 'clamp(12px, 2vw, 14px)',
+                    minHeight: '44px'
                   }}
                 >
                   Companies (VAT-liable)
@@ -349,7 +385,9 @@ export default function Register() {
                     borderRadius: '8px',
                     border: accountType === 'individual' ? '2px solid #667eea' : '1px solid #e5e7eb',
                     background: accountType === 'individual' ? '#eef2ff' : '#ffffff',
-                    cursor: 'pointer'
+                    cursor: 'pointer',
+                    fontSize: 'clamp(12px, 2vw, 14px)',
+                    minHeight: '44px'
                   }}
                 >
                   Private Individuals
@@ -361,24 +399,24 @@ export default function Register() {
             {!isLoginMode && accountType === 'company' && (
               <>
                 <div style={{ marginBottom: '16px' }}>
-                  <label style={{ display: 'block', fontSize: '14px', fontWeight: 600, color: '#374151', marginBottom: '8px' }}>
+                  <label style={{ display: 'block', fontSize: 'clamp(12px, 2vw, 14px)', fontWeight: 600, color: '#374151', marginBottom: '8px' }}>
                     Company Name *
                   </label>
-                  <input value={companyName} onChange={e => setCompanyName(e.target.value)} placeholder="Enter company name" style={{ width: '100%', padding: '12px 16px', border: '1px solid #d1d5db', borderRadius: '8px' }} />
+                  <input value={companyName} onChange={e => setCompanyName(e.target.value)} placeholder="Enter company name" style={{ width: '100%', padding: '12px 16px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '16px', boxSizing: 'border-box', minHeight: '44px' }} />
                 </div>
 
                 <div style={{ marginBottom: '16px' }}>
-                  <label style={{ display: 'block', fontSize: '14px', fontWeight: 600, color: '#374151', marginBottom: '8px' }}>
+                  <label style={{ display: 'block', fontSize: 'clamp(12px, 2vw, 14px)', fontWeight: 600, color: '#374151', marginBottom: '8px' }}>
                     VAT Number *
                   </label>
-                  <input value={vatNumber} onChange={e => setVatNumber(e.target.value)} placeholder="Enter VAT number" style={{ width: '100%', padding: '12px 16px', border: '1px solid #d1d5db', borderRadius: '8px' }} />
+                  <input value={vatNumber} onChange={e => setVatNumber(e.target.value)} placeholder="Enter VAT number" style={{ width: '100%', padding: '12px 16px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '16px', boxSizing: 'border-box', minHeight: '44px' }} />
                 </div>
 
                 <div style={{ marginBottom: '16px' }}>
-                  <label style={{ display: 'block', fontSize: '14px', fontWeight: 600, color: '#374151', marginBottom: '8px' }}>
+                  <label style={{ display: 'block', fontSize: 'clamp(12px, 2vw, 14px)', fontWeight: 600, color: '#374151', marginBottom: '8px' }}>
                     Contact Person *
                   </label>
-                  <input value={fullName} onChange={e => setFullName(e.target.value)} placeholder="Name of contact person" style={{ width: '100%', padding: '12px 16px', border: '1px solid #d1d5db', borderRadius: '8px' }} />
+                  <input value={fullName} onChange={e => setFullName(e.target.value)} placeholder="Name of contact person" style={{ width: '100%', padding: '12px 16px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '16px', boxSizing: 'border-box', minHeight: '44px' }} />
                 </div>
               </>
             )}
@@ -387,10 +425,10 @@ export default function Register() {
             {!isLoginMode && accountType === 'individual' && (
               <>
                 <div style={{ marginBottom: '16px' }}>
-                  <label style={{ display: 'block', fontSize: '14px', fontWeight: 600, color: '#374151', marginBottom: '8px' }}>
+                  <label style={{ display: 'block', fontSize: 'clamp(12px, 2vw, 14px)', fontWeight: 600, color: '#374151', marginBottom: '8px' }}>
                     Name *
                   </label>
-                  <input value={fullName} onChange={e => setFullName(e.target.value)} placeholder="Your full name" style={{ width: '100%', padding: '12px 16px', border: '1px solid #d1d5db', borderRadius: '8px' }} />
+                  <input value={fullName} onChange={e => setFullName(e.target.value)} placeholder="Your full name" style={{ width: '100%', padding: '12px 16px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '16px', boxSizing: 'border-box', minHeight: '44px' }} />
                 </div>
               </>
             )}
@@ -399,7 +437,7 @@ export default function Register() {
             <div style={{ marginBottom: '24px' }}>
               <label style={{
                 display: 'block',
-                fontSize: '14px',
+                fontSize: 'clamp(12px, 2vw, 14px)',
                 fontWeight: 600,
                 color: '#374151',
                 marginBottom: '8px'
@@ -419,7 +457,8 @@ export default function Register() {
                   borderRadius: '8px',
                   fontSize: '16px',
                   outline: 'none',
-                  boxSizing: 'border-box'
+                  boxSizing: 'border-box',
+                  minHeight: '44px'
                 }}
               />
             </div>
@@ -428,7 +467,7 @@ export default function Register() {
             <div style={{ marginBottom: '24px' }}>
               <label style={{
                 display: 'block',
-                fontSize: '14px',
+                fontSize: 'clamp(12px, 2vw, 14px)',
                 fontWeight: 600,
                 color: '#374151',
                 marginBottom: '8px'
@@ -454,7 +493,8 @@ export default function Register() {
                     borderRadius: '8px',
                     fontSize: '16px',
                     outline: 'none',
-                    boxSizing: 'border-box'
+                    boxSizing: 'border-box',
+                    minHeight: '44px'
                   }}
                 />
                 <button
@@ -467,14 +507,19 @@ export default function Register() {
                     border: 'none',
                     cursor: 'pointer',
                     fontSize: '18px',
-                    color: '#6b7280'
+                    color: '#6b7280',
+                    minWidth: '44px',
+                    minHeight: '44px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
                   }}
                 >
                   {showPassword ? '👁️' : '👁️‍🗨️'}
                 </button>
               </div>
               <p style={{
-                fontSize: '12px',
+                fontSize: 'clamp(10px, 1.5vw, 12px)',
                 color: '#6b7280',
                 margin: '8px 0 0 0',
                 lineHeight: '1.4'
@@ -486,42 +531,40 @@ export default function Register() {
             {/* Budget (mandatory for both account types when registering) */}
             {!isLoginMode && (
               <div style={{ marginBottom: '20px' }}>
-                <label style={{ display: 'block', fontSize: '14px', fontWeight: 600, color: '#374151', marginBottom: '8px' }}>
+                <label style={{ display: 'block', fontSize: 'clamp(12px, 2vw, 14px)', fontWeight: 600, color: '#374151', marginBottom: '8px' }}>
                   Budget Indication *
                 </label>
-                <select value={budget} onChange={e => setBudget(e.target.value)} style={{ width: '100%', padding: '12px 16px', border: '1px solid #d1d5db', borderRadius: '8px' }}>
+                <select value={budget} onChange={e => setBudget(e.target.value)} style={{ width: '100%', padding: '12px 16px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '16px', boxSizing: 'border-box', minHeight: '44px' }}>
                   <option value="">Select a budget range</option>
                   {budgetOptions.map(b => <option key={b.value} value={b.value}>{b.label}</option>)}
                 </select>
-                <p style={{ fontSize: '12px', color: '#6b7280', marginTop: '8px' }}>This helps us understand your expectations.</p>
+                <p style={{ fontSize: 'clamp(10px, 1.5vw, 12px)', color: '#6b7280', marginTop: '8px' }}>This helps us understand your expectations.</p>
               </div>
             )}
 
             {/* Optional Phone Number */}
             {!isLoginMode && (
               <div style={{ marginBottom: '16px' }}>
-                <label style={{ display: 'block', fontSize: '14px', fontWeight: 600, color: '#374151', marginBottom: '8px' }}>
+                <label style={{ display: 'block', fontSize: 'clamp(12px, 2vw, 14px)', fontWeight: 600, color: '#374151', marginBottom: '8px' }}>
                   Phone Number (optional)
                 </label>
-                <input value={contactNumber} onChange={e => setContactNumber(e.target.value)} placeholder="+49 170 000000" style={{ width: '100%', padding: '12px 16px', border: '1px solid #d1d5db', borderRadius: '8px' }} />
+                <input value={contactNumber} onChange={e => setContactNumber(e.target.value)} placeholder="+49 170 000000" style={{ width: '100%', padding: '12px 16px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '16px', boxSizing: 'border-box', minHeight: '44px' }} />
               </div>
             )}
 
             {/* Desired Deadline (optional for companies) */}
             {!isLoginMode && accountType === 'company' && (
               <div style={{ marginBottom: '16px' }}>
-                <label style={{ display: 'block', fontSize: '14px', fontWeight: 600, color: '#374151', marginBottom: '8px' }}>
+                <label style={{ display: 'block', fontSize: 'clamp(12px, 2vw, 14px)', fontWeight: 600, color: '#374151', marginBottom: '8px' }}>
                   Desired Deadline (optional)
                 </label>
-                <input type="date" value={desiredDeadline} onChange={e => setDesiredDeadline(e.target.value)} style={{ width: '100%', padding: '12px 16px', border: '1px solid #d1d5db', borderRadius: '8px' }} />
+                <input type="date" value={desiredDeadline} onChange={e => setDesiredDeadline(e.target.value)} style={{ width: '100%', padding: '12px 16px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '16px', boxSizing: 'border-box', minHeight: '44px' }} />
               </div>
             )}
 
-            {/* Social Media Accounts (optional for individuals) */}
-
             {/* Submit Button */}
-            <button 
-              type="submit" 
+            <button
+              type="submit"
               style={{
                 width: '100%',
                 background: '#667eea',
@@ -529,11 +572,12 @@ export default function Register() {
                 border: 'none',
                 borderRadius: '8px',
                 padding: '16px',
-                fontSize: '16px',
+                fontSize: 'clamp(14px, 2vw, 16px)',
                 fontWeight: 600,
                 cursor: 'pointer',
                 marginBottom: '24px',
-                transition: 'background-color 0.2s ease'
+                transition: 'background-color 0.2s ease',
+                minHeight: '44px'
               }}
             >
               {isLoginMode ? 'Sign In' : 'Continue'}
@@ -541,25 +585,27 @@ export default function Register() {
 
             {/* Error/Success Messages */}
             {error && (
-              <div style={{ 
-                color: '#dc2626', 
+              <div style={{
+                color: '#dc2626',
                 marginBottom: '16px',
                 padding: '12px',
                 background: '#fef2f2',
                 borderRadius: '8px',
-                border: '1px solid #fecaca'
+                border: '1px solid #fecaca',
+                fontSize: 'clamp(12px, 2vw, 14px)'
               }}>
                 {error}
               </div>
             )}
             {success && (
-              <div style={{ 
-                color: '#059669', 
+              <div style={{
+                color: '#059669',
                 marginBottom: '16px',
                 padding: '12px',
                 background: '#f0fdf4',
                 borderRadius: '8px',
-                border: '1px solid #bbf7d0'
+                border: '1px solid #bbf7d0',
+                fontSize: 'clamp(12px, 2vw, 14px)'
               }}>
                 {success}
               </div>
@@ -567,7 +613,7 @@ export default function Register() {
 
             {/* Toggle Link */}
             <div style={{ textAlign: 'center', marginBottom: '16px' }}>
-              <button 
+              <button
                 onClick={() => {
                   setIsLoginMode(!isLoginMode);
                   setError('');
@@ -578,7 +624,7 @@ export default function Register() {
                   border: 'none',
                   color: '#667eea',
                   textDecoration: 'none',
-                  fontSize: '14px',
+                  fontSize: 'clamp(12px, 2vw, 14px)',
                   fontWeight: 500,
                   cursor: 'pointer'
                 }}
@@ -587,9 +633,9 @@ export default function Register() {
               </button>
             </div>
 
-            {/* NEW: Admin Login Link */}
+            {/* Admin Login Link */}
             <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-              <button 
+              <button
                 type="button"
                 onClick={handleAdminLogin}
                 style={{
@@ -597,10 +643,14 @@ export default function Register() {
                   border: 'none',
                   color: '#dc2626',
                   textDecoration: 'none',
-                  fontSize: '13px',
+                  fontSize: 'clamp(11px, 1.8vw, 13px)',
                   fontWeight: 500,
                   cursor: 'pointer',
-                  opacity: 0.8
+                  opacity: 0.8,
+                  minHeight: '44px',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
                 }}
               >
                 🔐 Admin Login
@@ -614,12 +664,12 @@ export default function Register() {
               marginBottom: '24px'
             }}>
               <div style={{ flex: '1', height: '1px', background: '#e5e7eb' }}></div>
-              <span style={{ padding: '0 16px', color: '#6b7280', fontSize: '14px' }}>Or</span>
+              <span style={{ padding: '0 16px', color: '#6b7280', fontSize: 'clamp(12px, 2vw, 14px)' }}>Or</span>
               <div style={{ flex: '1', height: '1px', background: '#e5e7eb' }}></div>
             </div>
 
             {/* Google Sign Up */}
-            <button 
+            <button
               type="button"
               style={{
                 width: '100%',
@@ -628,14 +678,16 @@ export default function Register() {
                 border: '1px solid #d1d5db',
                 borderRadius: '8px',
                 padding: '16px',
-                fontSize: '16px',
+                fontSize: 'clamp(14px, 2vw, 16px)',
                 fontWeight: 500,
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: '12px',
-                marginBottom: '24px'
+                marginBottom: '24px',
+                minHeight: '44px',
+                boxSizing: 'border-box'
               }}
             >
               <span style={{ fontSize: '20px' }}>🔍</span>
@@ -644,7 +696,7 @@ export default function Register() {
 
             {/* Terms */}
             <p style={{
-              fontSize: '12px',
+              fontSize: 'clamp(10px, 1.5vw, 12px)',
               color: '#6b7280',
               textAlign: 'center',
               lineHeight: '1.5'

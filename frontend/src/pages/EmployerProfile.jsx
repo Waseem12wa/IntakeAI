@@ -31,20 +31,20 @@ export default function EmployerProfile() {
   };
 
   return (
-    <div style={{ 
-      background: '#ffffff', 
+    <div style={{
+      background: '#ffffff',
       minHeight: '100vh',
       fontFamily: "'Google Sans', 'Roboto', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif"
     }}>
       {/* Header */}
-      <div style={{ 
+      <div style={{
         background: 'linear-gradient(135deg, #4caf50 0%, #388e3c 100%)',
-        padding: '40px',
+        padding: 'clamp(24px, 6vw, 40px)',
         textAlign: 'center',
         color: '#ffffff'
       }}>
         <h1 style={{
-          fontSize: '2.5rem',
+          fontSize: 'clamp(1.75rem, 5vw, 2.5rem)',
           fontWeight: 800,
           margin: '0 0 16px 0',
           lineHeight: '1.1'
@@ -52,7 +52,7 @@ export default function EmployerProfile() {
           Employer Profile Setup
         </h1>
         <p style={{
-          fontSize: '1.1rem',
+          fontSize: 'clamp(0.9rem, 2vw, 1.1rem)',
           margin: '0',
           opacity: 0.9
         }}>
@@ -64,13 +64,13 @@ export default function EmployerProfile() {
       <div style={{
         maxWidth: '800px',
         margin: '0 auto',
-        padding: '40px 20px'
+        padding: 'clamp(20px, 4vw, 40px) clamp(16px, 3vw, 20px)'
       }}>
         <form onSubmit={handleSubmit}>
           <div style={{
             background: '#ffffff',
-            borderRadius: '16px',
-            padding: '40px',
+            borderRadius: 'clamp(12px, 2vw, 16px)',
+            padding: 'clamp(24px, 5vw, 40px)',
             boxShadow: '0 4px 6px rgba(0,0,0,0.05)',
             border: '1px solid #e5e7eb'
           }}>
@@ -82,7 +82,7 @@ export default function EmployerProfile() {
             }}>
               Company Information
             </h2>
-            
+
             <div style={{ marginBottom: '24px' }}>
               <label style={{
                 display: 'block',
@@ -106,16 +106,18 @@ export default function EmployerProfile() {
                   borderRadius: '8px',
                   fontSize: '16px',
                   outline: 'none',
-                  fontFamily: 'inherit'
+                  fontFamily: 'inherit',
+                  minHeight: '44px',
+                  boxSizing: 'border-box'
                 }}
               />
             </div>
 
             <div style={{
               display: 'grid',
-              gridTemplateColumns: '1fr 1fr',
-              gap: '24px',
-              marginBottom: '24px'
+              gridTemplateColumns: window.innerWidth < 768 ? '1fr' : '1fr 1fr',
+              gap: 'clamp(16px, 3vw, 24px)',
+              marginBottom: 'clamp(16px, 3vw, 24px)'
             }}>
               <div>
                 <label style={{
@@ -144,7 +146,7 @@ export default function EmployerProfile() {
                   }}
                 />
               </div>
-              
+
               <div>
                 <label style={{
                   display: 'block',
@@ -206,7 +208,7 @@ export default function EmployerProfile() {
                   }}
                 />
               </div>
-              
+
               <div>
                 <label style={{
                   display: 'block',
@@ -278,7 +280,7 @@ export default function EmployerProfile() {
                   <option value="Other">Other</option>
                 </select>
               </div>
-              
+
               <div>
                 <label style={{
                   display: 'block',
@@ -382,7 +384,7 @@ export default function EmployerProfile() {
                   <option value="Agency">Agency</option>
                 </select>
               </div>
-              
+
               <div>
                 <label style={{
                   display: 'block',
@@ -487,10 +489,12 @@ export default function EmployerProfile() {
                   background: '#4caf50',
                   color: '#ffffff',
                   borderRadius: '8px',
-                  fontSize: '16px',
+                  fontSize: 'clamp(14px, 2vw, 16px)',
                   fontWeight: 600,
                   cursor: 'pointer',
-                  transition: 'all 0.2s ease'
+                  transition: 'all 0.2s ease',
+                  minHeight: '44px',
+                  minWidth: window.innerWidth < 768 ? '100%' : 'auto'
                 }}
               >
                 Complete Company Profile

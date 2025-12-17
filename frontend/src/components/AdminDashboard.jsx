@@ -5,7 +5,9 @@ import IntegrationManager from './IntegrationManager';
 import jsPDF from 'jspdf';
 
 export default function AdminDashboard() {
-  const [token, setToken] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [token, setToken] = useState(''); // Keep token for API calls after authentication
   const [projects, setProjects] = useState([]);
   const [selected, setSelected] = useState(null);
   const [error, setError] = useState(null);
@@ -133,16 +135,32 @@ export default function AdminDashboard() {
     }
   }, [isAdminAuthenticated]);
 
-  const handleLoad = async () => {
+  const handleLogin = async () => {
     setLoading(true);
     setError(null);
+
+    // Hardcoded admin credentials
+    const ADMIN_EMAIL = 'admin@intake.ai';
+    const ADMIN_PASSWORD = 'admin1234';
+    const ADMIN_TOKEN = 'changeme'; // Use the existing token for API calls
+
     try {
-      const res = await listJobs(token);
-      setProjects(res.jobs || []);
-      setIsAdminAuthenticated(true); // Set authenticated state on successful load
+      // Validate credentials
+      if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
+        // Set the token for API calls
+        setToken(ADMIN_TOKEN);
+
+        // Load projects using the token
+        const res = await listJobs(ADMIN_TOKEN);
+        setProjects(res.jobs || []);
+        setIsAdminAuthenticated(true);
+      } else {
+        setError('Invalid email or password.');
+        setIsAdminAuthenticated(false);
+      }
     } catch (err) {
-      setError('Invalid token or server error.');
-      setIsAdminAuthenticated(false); // Reset authenticated state on error
+      setError('Invalid credentials or server error.');
+      setIsAdminAuthenticated(false);
     }
     setLoading(false);
   };
@@ -594,29 +612,56 @@ export default function AdminDashboard() {
               color: '#343541',
               margin: '0 0 16px 0'
             }}>
-              🔐 Admin Authentication
+              🔐 Admin Login
             </h3>
             <div style={{
               display: 'flex',
-              alignItems: 'center',
-              gap: '16px',
-              flexWrap: 'wrap'
+              flexDirection: 'column',
+              gap: '12px'
             }}>
               <input
-                type="password"
-                placeholder="Enter admin token"
-                value={token}
-                onChange={e => setToken(e.target.value)}
+                type="email"
+                placeholder="Email"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
                 style={{
-                  flex: '1',
-                  minWidth: '250px',
+                  width: '100%',
                   borderRadius: '12px',
                   border: '2px solid #bfdbfe',
                   padding: '12px 16px',
                   fontSize: '16px',
                   outline: 'none',
                   transition: 'border-color 0.2s ease',
-                  fontFamily: "'Google Sans', 'Roboto', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif"
+                  fontFamily: "'Google Sans', 'Roboto', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif",
+                  boxSizing: 'border-box'
+                }}
+                onFocus={(e) => {
+                  e.target.style.borderColor = '#3b82f6';
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = '#bfdbfe';
+                }}
+              />
+              <input
+                type="password"
+                placeholder="Password"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter' && email && password && !loading) {
+                    handleLogin();
+                  }
+                }}
+                style={{
+                  width: '100%',
+                  borderRadius: '12px',
+                  border: '2px solid #bfdbfe',
+                  padding: '12px 16px',
+                  fontSize: '16px',
+                  outline: 'none',
+                  transition: 'border-color 0.2s ease',
+                  fontFamily: "'Google Sans', 'Roboto', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif",
+                  boxSizing: 'border-box'
                 }}
                 onFocus={(e) => {
                   e.target.style.borderColor = '#3b82f6';
@@ -626,34 +671,35 @@ export default function AdminDashboard() {
                 }}
               />
               <button
-                onClick={handleLoad}
-                disabled={!token || loading}
+                onClick={handleLogin}
+                disabled={!email || !password || loading}
                 style={{
-                  background: token && !loading ? 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)' : '#e5e7eb',
-                  color: token && !loading ? '#ffffff' : '#9ca3af',
+                  background: email && password && !loading ? 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)' : '#e5e7eb',
+                  color: email && password && !loading ? '#ffffff' : '#9ca3af',
                   border: 'none',
                   borderRadius: '12px',
                   padding: '12px 24px',
                   fontWeight: 600,
                   fontSize: '16px',
-                  cursor: token && !loading ? 'pointer' : 'not-allowed',
+                  cursor: email && password && !loading ? 'pointer' : 'not-allowed',
                   transition: 'all 0.2s ease',
                   boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                  fontFamily: "'Google Sans', 'Roboto', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif"
+                  fontFamily: "'Google Sans', 'Roboto', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif'",
+                  width: '100%'
                 }}
                 onMouseEnter={(e) => {
-                  if (token && !loading) {
+                  if (email && password && !loading) {
                     e.target.style.background = 'linear-gradient(135deg, #1d4ed8 0%, #1e3a8a 100%)';
                   }
                 }}
                 onMouseLeave={(e) => {
-                  if (token && !loading) {
+                  if (email && password && !loading) {
                     e.target.style.background = 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)';
                   }
                 }}
               >
                 {loading ? (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
                     <div style={{
                       width: '16px',
                       height: '16px',
@@ -662,9 +708,9 @@ export default function AdminDashboard() {
                       borderRadius: '50%',
                       animation: 'spin 1s linear infinite'
                     }}></div>
-                    Loading...
+                    Logging in...
                   </div>
-                ) : 'Load Projects'}
+                ) : 'Login'}
               </button>
             </div>
             {error && (

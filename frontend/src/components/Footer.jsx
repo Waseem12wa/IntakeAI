@@ -239,7 +239,7 @@ export default function Footer() {
             </p>
             <div style={{
               display: 'flex',
-              flexDirection: 'row',
+              flexDirection: window.innerWidth < 768 ? 'column' : 'row',
               gap: '8px',
               marginBottom: '20px',
               flexWrap: 'wrap'
@@ -248,14 +248,17 @@ export default function Footer() {
                 type="email"
                 placeholder="Enter your email"
                 style={{
-                  flex: 1,
+                  flex: window.innerWidth < 768 ? '1' : '1',
+                  width: window.innerWidth < 768 ? '100%' : 'auto',
                   padding: '12px 16px',
                   borderRadius: '8px',
                   border: '1px solid #475569',
                   background: '#1e293b',
                   color: '#ffffff',
                   fontSize: '0.875rem',
-                  outline: 'none'
+                  outline: 'none',
+                  minHeight: '44px',
+                  boxSizing: 'border-box'
                 }}
               />
               <button style={{
@@ -267,7 +270,10 @@ export default function Footer() {
                 fontSize: '0.875rem',
                 fontWeight: 600,
                 cursor: 'pointer',
-                transition: 'background 0.2s ease'
+                transition: 'background 0.2s ease',
+                minHeight: '44px',
+                minWidth: window.innerWidth < 768 ? '100%' : '44px',
+                boxSizing: 'border-box'
               }}
                 onMouseOver={(e) => e.target.style.background = '#1976D2'}
                 onMouseOut={(e) => e.target.style.background = '#2196F3'}
