@@ -1454,34 +1454,52 @@ export default function AdminDashboard() {
 
                               <button
                                 onClick={() => {
-                                  if (calculatedPrice) {
-                                    setFinalApprovalReady(true);
+                                  if (calculatedPrice && pendingEstimate) {
+                                    handleFinalApproval(pendingEstimate);
                                   }
                                 }}
-                                disabled={!calculatedPrice}
+                                disabled={!calculatedPrice || processing}
                                 style={{
-                                  background: !calculatedPrice ? '#e5e7eb' : '#3b82f6',
-                                  color: !calculatedPrice ? '#9ca3af' : '#ffffff',
+                                  background: (!calculatedPrice || processing) ? '#e5e7eb' : '#3b82f6',
+                                  color: (!calculatedPrice || processing) ? '#9ca3af' : '#ffffff',
                                   border: 'none',
                                   borderRadius: '6px',
                                   padding: '10px 20px',
                                   fontWeight: 600,
                                   fontSize: '14px',
-                                  cursor: !calculatedPrice ? 'not-allowed' : 'pointer',
-                                  transition: 'all 0.2s ease'
+                                  cursor: (!calculatedPrice || processing) ? 'not-allowed' : 'pointer',
+                                  transition: 'all 0.2s ease',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  gap: '8px'
                                 }}
                                 onMouseEnter={(e) => {
-                                  if (calculatedPrice) {
+                                  if (calculatedPrice && !processing) {
                                     e.target.style.background = '#2563eb';
                                   }
                                 }}
                                 onMouseLeave={(e) => {
-                                  if (calculatedPrice) {
+                                  if (calculatedPrice && !processing) {
                                     e.target.style.background = '#3b82f6';
                                   }
                                 }}
                               >
-                                Set Price & Approve
+                                {processing ? (
+                                  <>
+                                    <div style={{
+                                      width: '14px',
+                                      height: '14px',
+                                      border: '2px solid white',
+                                      borderTop: '2px solid transparent',
+                                      borderRadius: '50%',
+                                      animation: 'spin 1s linear infinite'
+                                    }}></div>
+                                    Processing...
+                                  </>
+                                ) : (
+                                  'Set Price & Approve'
+                                )}
                               </button>
                             </div>
                           </div>
@@ -2026,11 +2044,12 @@ export default function AdminDashboard() {
               </button>
 
               <button
-                onClick={() => {
+                onClick={async () => {
                   // Calculate total price from individual node prices
                   let totalPrice = 0;
                   let allPricesSet = true;
                   const nodePrices = {};
+                  const missingPrices = [];
 
                   if (selectedN8nReview.generated_quote?.items) {
                     selectedN8nReview.generated_quote.items.forEach(item => {
@@ -2044,6 +2063,7 @@ export default function AdminDashboard() {
                           }
                         } else {
                           allPricesSet = false;
+                          missingPrices.push(item.node_label || item.node_type);
                         }
                       } else {
                         totalPrice += item.base_price;
@@ -2056,29 +2076,70 @@ export default function AdminDashboard() {
                     });
                   }
 
-                  if (allPricesSet && totalPrice > 0) {
-                    handleN8nQuoteApproval(selectedN8nReview.queue_id, totalPrice.toFixed(2), nodePrices);
+                  if (!allPricesSet) {
+                    setError(`Please set prices for all nodes. Missing: ${missingPrices.join(', ')}`);
+                    return;
+                  }
+
+                  if (totalPrice <= 0) {
+                    setError('Total price must be greater than 0');
+                    return;
+                  }
+
+                  try {
+                    setProcessing(true);
+                    setError(null);
+                    await handleN8nQuoteApproval(selectedN8nReview.queue_id, totalPrice.toFixed(2), nodePrices);
+                    // Close modal on success
+                    setShowN8nPriceModal(false);
+                    setSelectedN8nReview(null);
+                  } catch (err) {
+                    setError('Failed to approve quote: ' + err.message);
+                  } finally {
+                    setProcessing(false);
                   }
                 }}
+                disabled={processing}
                 style={{
-                  background: '#10b981',
+                  background: processing ? '#9ca3af' : '#10b981',
                   color: '#ffffff',
                   border: 'none',
                   borderRadius: '6px',
                   padding: '10px 20px',
                   fontWeight: 600,
                   fontSize: '14px',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease'
+                  cursor: processing ? 'not-allowed' : 'pointer',
+                  transition: 'all 0.2s ease',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
                 }}
                 onMouseEnter={(e) => {
-                  e.target.style.background = '#059669';
+                  if (!processing) {
+                    e.target.style.background = '#059669';
+                  }
                 }}
                 onMouseLeave={(e) => {
-                  e.target.style.background = '#10b981';
+                  if (!processing) {
+                    e.target.style.background = '#10b981';
+                  }
                 }}
               >
-                Set Prices & Approve
+                {processing ? (
+                  <>
+                    <div style={{
+                      width: '14px',
+                      height: '14px',
+                      border: '2px solid white',
+                      borderTop: '2px solid transparent',
+                      borderRadius: '50%',
+                      animation: 'spin 1s linear infinite'
+                    }}></div>
+                    Processing...
+                  </>
+                ) : (
+                  'Set Prices & Approve'
+                )}
               </button>
             </div>
           </div>
