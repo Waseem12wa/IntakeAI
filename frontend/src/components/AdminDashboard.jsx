@@ -3,6 +3,7 @@ import { listSubmissions, getSubmission, downloadDocument, listJobs, getJob } fr
 import { useNotification } from '../context/NotificationContext';
 import IntegrationManager from './IntegrationManager';
 import jsPDF from 'jspdf';
+import { generateN8nQuotePDF } from '../utils/n8nQuotePdfGenerator';
 
 export default function AdminDashboard() {
   const [email, setEmail] = useState('');
@@ -83,30 +84,44 @@ export default function AdminDashboard() {
 
       if (response.ok) {
         const result = await response.json();
-        // Update the approved estimate with the complete data
-        if (result.approvedEstimate) {
-          setApprovedEstimate(result.approvedEstimate);
-        }
-        // Refresh the pending reviews
-        await fetchPendingN8nReviews();
-        // Close the modal
-        setShowN8nPriceModal(false);
-        setSelectedN8nReview(null);
-        setN8nPrice('');
-        // Show success notification
-        showGeneralNotification(
-          'n8n quote modification approved and price set!',
-          'success'
-        );
 
-        // Show notification to user with project name BEFORE resetting state
-        // Try multiple possible locations for the workflow name
+        // Store project name BEFORE any async operations that might fail
         const projectName = selectedN8nReview?.original_request?.workflow ||
           selectedN8nReview?.original_request?.fileName ||
           selectedN8nReview?.original_request?.filename ||
           selectedN8nReview?.original_request?.file_name ||
           'n8n Workflow';
+
+        // Show success notification FIRST - this is the critical user feedback
+        showGeneralNotification(
+          'n8n quote approved successfully! Price has been set.',
+          'success'
+        );
+
+        // Show notification to user with project name
         showN8nApprovalNotification(projectName, queueId);
+
+        // Update the approved estimate with the complete data if available
+        if (result.approvedEstimate) {
+          setApprovedEstimate(result.approvedEstimate);
+        }
+
+        // Wrap post-success operations in try-catch to prevent errors from affecting success flow
+        try {
+          // Refresh the pending reviews
+          await fetchPendingN8nReviews();
+        } catch (postApprovalError) {
+          console.error('Error refreshing pending reviews:', postApprovalError);
+          // Don't show error to user - the approval was successful
+        }
+
+        // Close the modal
+        setShowN8nPriceModal(false);
+        setSelectedN8nReview(null);
+        setN8nPrice('');
+
+        // Don't throw any errors - approval was successful
+        return;
       } else {
         const text = await response.text();
         let errorMessage = 'Failed to approve n8n quote';
@@ -756,15 +771,38 @@ export default function AdminDashboard() {
               borderRadius: '12px',
               padding: '20px',
               marginBottom: '24px',
-              border: '1px solid #e5e5e5'
+              border: '1px solid #e5e5e5',
+              maxWidth: '1200px',
+              margin: '0 auto 24px auto'
             }}>
               <h3 style={{
                 fontSize: '1.25rem',
                 fontWeight: 600,
                 color: '#343541',
-                margin: '0 0 16px 0'
+                margin: '0 0 16px 0',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center'
               }}>
-                🔄 n8n Quote Reviews
+                <span>🔄 n8n Quote Reviews</span>
+                <button
+                  onClick={fetchPendingN8nReviews}
+                  style={{
+                    background: '#3b82f6',
+                    color: '#ffffff',
+                    border: 'none',
+                    borderRadius: '6px',
+                    padding: '6px 12px',
+                    fontWeight: 500,
+                    fontSize: '14px',
+                    cursor: 'pointer',
+                    transition: 'background 0.2s ease'
+                  }}
+                  onMouseEnter={(e) => e.target.style.background = '#2563eb'}
+                  onMouseLeave={(e) => e.target.style.background = '#3b82f6'}
+                >
+                  🔄 Refresh
+                </button>
               </h3>
 
               {pendingN8nReviews.length > 0 ? (

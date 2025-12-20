@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import N8nQuoteApi from '../api/n8nQuoteApi';
+import { generateN8nQuotePDF } from '../utils/n8nQuotePdfGenerator';
 
 export default function N8nProjectQuote() {
   const { id } = useParams();
@@ -28,13 +29,19 @@ export default function N8nProjectQuote() {
     }
   }, [id]);
 
+  const handleDownloadPDF = () => {
+    if (quote) {
+      generateN8nQuotePDF(quote);
+    }
+  };
+
   if (loading) {
     return (
-      <div style={{ 
-        minHeight: '100vh', 
-        background: '#f9fafb', 
-        display: 'flex', 
-        justifyContent: 'center', 
+      <div style={{
+        minHeight: '100vh',
+        background: '#f9fafb',
+        display: 'flex',
+        justifyContent: 'center',
         alignItems: 'center',
         fontFamily: "'Google Sans', 'Roboto', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif"
       }}>
@@ -45,11 +52,11 @@ export default function N8nProjectQuote() {
 
   if (!quote) {
     return (
-      <div style={{ 
-        minHeight: '100vh', 
-        background: '#f9fafb', 
-        display: 'flex', 
-        justifyContent: 'center', 
+      <div style={{
+        minHeight: '100vh',
+        background: '#f9fafb',
+        display: 'flex',
+        justifyContent: 'center',
         alignItems: 'center',
         fontFamily: "'Google Sans', 'Roboto', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif"
       }}>
@@ -60,42 +67,80 @@ export default function N8nProjectQuote() {
 
   // Check if quote is pending approval
   const isPendingApproval = quote.status === 'pending_approval';
+  const isApproved = quote.status === 'approved';
 
   return (
-    <div style={{ 
-      minHeight: '100vh', 
-      background: '#f9fafb', 
-      fontFamily: "'Google Sans', 'Roboto', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif" 
+    <div style={{
+      minHeight: '100vh',
+      background: '#f9fafb',
+      fontFamily: "'Google Sans', 'Roboto', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif"
     }}>
       <div style={{ maxWidth: 1000, margin: '0 auto', padding: '32px 20px' }}>
         {/* Header */}
-        <div style={{ 
-          display: 'flex', 
-          justifyContent: 'space-between', 
-          alignItems: 'center', 
-          marginBottom: '24px' 
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: '24px',
+          flexWrap: 'wrap',
+          gap: '12px'
         }}>
           <h2 style={{ fontWeight: 800, fontSize: '2rem', color: '#1976d2' }}>
             n8n Project Quote Details
           </h2>
-          <button
-            onClick={() => navigate('/jobs')}
-            style={{
-              background: '#6c757d',
-              color: '#fff',
-              padding: '10px 20px',
-              border: 'none',
-              borderRadius: 8,
-              fontWeight: 600,
-              fontSize: 15,
-              cursor: 'pointer',
-              transition: 'background 0.2s ease'
-            }}
-            onMouseEnter={(e) => e.target.style.background = '#5a6268'}
-            onMouseLeave={(e) => e.target.style.background = '#6c757d'}
-          >
-            Back to Projects
-          </button>
+          <div style={{ display: 'flex', gap: '12px' }}>
+            {isApproved && (
+              <button
+                onClick={handleDownloadPDF}
+                style={{
+                  background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                  color: '#fff',
+                  padding: '10px 20px',
+                  border: 'none',
+                  borderRadius: 8,
+                  fontWeight: 600,
+                  fontSize: 15,
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  boxShadow: '0 2px 8px rgba(16, 185, 129, 0.3)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.background = 'linear-gradient(135deg, #059669 0%, #047857 100%)';
+                  e.target.style.transform = 'translateY(-2px)';
+                  e.target.style.boxShadow = '0 4px 12px rgba(16, 185, 129, 0.4)';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.background = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
+                  e.target.style.transform = 'translateY(0)';
+                  e.target.style.boxShadow = '0 2px 8px rgba(16, 185, 129, 0.3)';
+                }}
+              >
+                <span style={{ fontSize: '18px' }}>📄</span>
+                Download Project PDF
+              </button>
+            )}
+            <button
+              onClick={() => navigate('/jobs')}
+              style={{
+                background: '#6c757d',
+                color: '#fff',
+                padding: '10px 20px',
+                border: 'none',
+                borderRadius: 8,
+                fontWeight: 600,
+                fontSize: 15,
+                cursor: 'pointer',
+                transition: 'background 0.2s ease'
+              }}
+              onMouseEnter={(e) => e.target.style.background = '#5a6268'}
+              onMouseLeave={(e) => e.target.style.background = '#6c757d'}
+            >
+              Back to Projects
+            </button>
+          </div>
         </div>
 
         {/* Status Banner for Pending Approval */}
@@ -120,12 +165,12 @@ export default function N8nProjectQuote() {
               <span style={{ fontSize: 24 }}>⏳</span>
               <span>Waiting for Admin Approval</span>
             </div>
-            <p style={{ 
-              color: '#975a16', 
+            <p style={{
+              color: '#975a16',
               marginTop: 8,
               fontSize: 15
             }}>
-              This quote is currently pending approval from an administrator. 
+              This quote is currently pending approval from an administrator.
               Pricing details will be available once approved.
             </p>
           </div>
@@ -142,7 +187,7 @@ export default function N8nProjectQuote() {
           <h3 style={{ fontWeight: 700, fontSize: '1.5rem', color: '#222', marginBottom: 16 }}>
             {quote.fileName}
           </h3>
-          
+
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
             <div>
               <div style={{ color: '#6c757d', fontSize: 14, marginBottom: 4 }}>Total Price</div>
@@ -150,42 +195,42 @@ export default function N8nProjectQuote() {
                 {isPendingApproval ? '-' : `$${quote.totalPrice.toFixed(2)}`}
               </div>
             </div>
-            
+
             <div>
               <div style={{ color: '#6c757d', fontSize: 14, marginBottom: 4 }}>Base Price</div>
               <div style={{ fontWeight: 700, fontSize: 24, color: '#28a745' }}>
                 {isPendingApproval ? '-' : `$${quote.basePrice.toFixed(2)}`}
               </div>
             </div>
-            
+
             <div>
               <div style={{ color: '#6c757d', fontSize: 14, marginBottom: 4 }}>Modifications</div>
               <div style={{ fontWeight: 700, fontSize: 24, color: '#ffc107' }}>
                 {isPendingApproval ? '-' : `$${quote.modificationsPrice.toFixed(2)}`}
               </div>
             </div>
-            
+
             <div>
               <div style={{ color: '#6c757d', fontSize: 14, marginBottom: 4 }}>Status</div>
-              <div style={{ 
-                fontWeight: 700, 
-                fontSize: 16, 
-                color: quote.status === 'approved' ? '#28a745' : 
-                       quote.status === 'pending_approval' ? '#ffc107' : 
-                       '#6c757d'
+              <div style={{
+                fontWeight: 700,
+                fontSize: 16,
+                color: quote.status === 'approved' ? '#28a745' :
+                  quote.status === 'pending_approval' ? '#ffc107' :
+                    '#6c757d'
               }}>
                 {quote.status.replace('_', ' ')}
               </div>
             </div>
           </div>
-          
+
           {quote.customerRequest && (
             <div style={{ marginTop: 20 }}>
               <div style={{ color: '#6c757d', fontSize: 14, marginBottom: 4 }}>Customer Request</div>
-              <div style={{ 
-                padding: 12, 
-                background: '#f8f9fa', 
-                borderRadius: 6, 
+              <div style={{
+                padding: 12,
+                background: '#f8f9fa',
+                borderRadius: 6,
                 border: '1px solid #e9ecef',
                 fontSize: 15
               }}>
@@ -193,14 +238,14 @@ export default function N8nProjectQuote() {
               </div>
             </div>
           )}
-          
+
           {quote.adminNotes && (
             <div style={{ marginTop: 20 }}>
               <div style={{ color: '#6c757d', fontSize: 14, marginBottom: 4 }}>Admin Notes</div>
-              <div style={{ 
-                padding: 12, 
-                background: '#e9f7ef', 
-                borderRadius: 6, 
+              <div style={{
+                padding: 12,
+                background: '#e9f7ef',
+                borderRadius: 6,
                 border: '1px solid #c3e6cb',
                 color: '#155724',
                 fontSize: 15
@@ -209,13 +254,61 @@ export default function N8nProjectQuote() {
               </div>
             </div>
           )}
-          
-          <div style={{ 
-            color: '#6c757d', 
-            fontSize: 13, 
-            marginTop: 20, 
-            paddingTop: 12, 
-            borderTop: '1px solid #e9ecef' 
+
+          {/* Integration Status - Only show for approved quotes */}
+          {isApproved && quote.integrationStatus && (
+            <div style={{ marginTop: 20 }}>
+              <div style={{ color: '#6c757d', fontSize: 14, marginBottom: 4 }}>Integration Status</div>
+              <div style={{
+                padding: 12,
+                background: quote.integrationStatus === 'completed' ? '#e9f7ef' :
+                  quote.integrationStatus === 'failed' ? '#f8d7da' :
+                    quote.integrationStatus === 'in_progress' ? '#e7f3ff' : '#f8f9fa',
+                borderRadius: 6,
+                border: `1px solid ${quote.integrationStatus === 'completed' ? '#c3e6cb' :
+                    quote.integrationStatus === 'failed' ? '#f5c6cb' :
+                      quote.integrationStatus === 'in_progress' ? '#b3d9ff' : '#e9ecef'
+                  }`,
+                color: quote.integrationStatus === 'completed' ? '#155724' :
+                  quote.integrationStatus === 'failed' ? '#721c24' :
+                    quote.integrationStatus === 'in_progress' ? '#004085' : '#6c757d',
+                fontSize: 15,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8
+              }}>
+                <span style={{ fontSize: 20 }}>
+                  {quote.integrationStatus === 'completed' ? '✅' :
+                    quote.integrationStatus === 'failed' ? '❌' :
+                      quote.integrationStatus === 'in_progress' ? '⏳' : '⏸️'}
+                </span>
+                <div>
+                  <div style={{ fontWeight: 600 }}>
+                    {quote.integrationStatus === 'completed' ? 'Integration Completed' :
+                      quote.integrationStatus === 'failed' ? 'Integration Failed' :
+                        quote.integrationStatus === 'in_progress' ? 'Integration In Progress' : 'Integration Pending'}
+                  </div>
+                  {quote.integrationCompletedAt && (
+                    <div style={{ fontSize: 13, marginTop: 4, opacity: 0.8 }}>
+                      Completed: {new Date(quote.integrationCompletedAt).toLocaleString()}
+                    </div>
+                  )}
+                  {quote.integrationError && (
+                    <div style={{ fontSize: 13, marginTop: 4, color: '#721c24' }}>
+                      Error: {quote.integrationError}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div style={{
+            color: '#6c757d',
+            fontSize: 13,
+            marginTop: 20,
+            paddingTop: 12,
+            borderTop: '1px solid #e9ecef'
           }}>
             Created: {new Date(quote.createdAt).toLocaleString()}
             {quote.reviewedAt && (
@@ -238,7 +331,7 @@ export default function N8nProjectQuote() {
             <h3 style={{ fontWeight: 700, fontSize: '1.3rem', color: '#222', marginBottom: 16 }}>
               Workflow Nodes ({quote.nodes.length})
             </h3>
-            
+
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               {quote.nodes.map((node, index) => (
                 <div key={node.nodeId} style={{
@@ -258,7 +351,7 @@ export default function N8nProjectQuote() {
                       Type: {node.nodeType}
                     </div>
                     {node.requiresManualReview && (
-                      <div style={{ 
+                      <div style={{
                         display: 'inline-block',
                         background: '#fff3cd',
                         color: '#856404',
@@ -271,7 +364,7 @@ export default function N8nProjectQuote() {
                       </div>
                     )}
                     {node.basePrice === 0 && (
-                      <div style={{ 
+                      <div style={{
                         display: 'inline-block',
                         background: '#f8d7da',
                         color: '#721c24',
@@ -285,7 +378,7 @@ export default function N8nProjectQuote() {
                       </div>
                     )}
                   </div>
-                  
+
                   <div style={{ textAlign: 'right' }}>
                     <div style={{ fontWeight: 700, fontSize: 18, color: '#222' }}>
                       {isPendingApproval ? '-' : `$${node.totalPrice.toFixed(2)}`}
@@ -311,7 +404,7 @@ export default function N8nProjectQuote() {
             <h3 style={{ fontWeight: 700, fontSize: '1.3rem', color: '#222', marginBottom: 16 }}>
               Modifications ({quote.modifications.length})
             </h3>
-            
+
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               {quote.modifications.map((mod, index) => (
                 <div key={index} style={{
@@ -327,7 +420,7 @@ export default function N8nProjectQuote() {
                     <div style={{ fontWeight: 600, fontSize: 16, color: '#222' }}>
                       {mod.description}
                     </div>
-                    <div style={{ 
+                    <div style={{
                       display: 'inline-block',
                       background: mod.approved ? '#d4edda' : '#f8d7da',
                       color: mod.approved ? '#155724' : '#721c24',
@@ -339,7 +432,7 @@ export default function N8nProjectQuote() {
                       {mod.approved ? 'Approved' : mod.requiresApproval ? 'Pending Approval' : 'Not Required'}
                     </div>
                   </div>
-                  
+
                   <div style={{ fontWeight: 700, fontSize: 18, color: '#222' }}>
                     {isPendingApproval ? '-' : `$${mod.price.toFixed(2)}`}
                   </div>

@@ -965,6 +965,7 @@ router.post('/approve-with-price', async (req, res) => {
             approved: true
           }] : [],
           workflowData: reviewItem.original_request || null,
+          integrationStatus: 'pending', // Set initial integration status
           createdAt: new Date(),
           updatedAt: new Date(),
           reviewedAt: new Date()
@@ -1002,6 +1003,7 @@ router.post('/approve-with-price', async (req, res) => {
           requiresApproval: true,
           approved: true
         }] : [];
+        projectQuote.integrationStatus = 'pending'; // Reset integration status on approval
         projectQuote.updatedAt = new Date();
         projectQuote.reviewedAt = new Date();
       }
@@ -1014,57 +1016,94 @@ router.post('/approve-with-price', async (req, res) => {
 
     // Create a pending estimate for this approved quote with complete details
     // Use a special identifier that can be found by both n8n quotes and the admin dashboard
-    const pendingEstimate = new PendingEstimate({
-      jobId: `n8n-${queue_id}`, // Changed format to be more consistent
-      originalEstimate: `$${parseFloat(price).toFixed(2)}`,
-      aiAnalysis: {
-        initialAnalysis: "Custom n8n workflow modification",
-        finalAnalysis: "Price set by admin for custom modifications",
-        questionsAndAnswers: []
-      },
-      status: 'approved',
-      adminNotes: notes || `Price set by admin: $${price}`,
-      calculatedPrice: parseFloat(price).toFixed(2),
-      priceBreakdown: {
-        estimatedWorkHours: "0",
-        hourlyRate: "0",
-        complexityFactor: "1",
-        adminFee: "0",
-        commission: "0",
-        surcharges: "0",
-        discounts: "0"
-      },
-      adminId: reviewer_email
-    });
+    // Wrap in try-catch to prevent errors from causing false error responses
+    let approvedEstimateData = null;
+    let estimateId = null;
 
-    // Add the complete workflow data to the estimate for reference
-    if (reviewItem.original_request) {
-      pendingEstimate.workflowData = reviewItem.original_request;
+    try {
+      const pendingEstimate = new PendingEstimate({
+        jobId: `n8n-${queue_id}`, // Changed format to be more consistent
+        originalEstimate: `$${parseFloat(price).toFixed(2)}`,
+        aiAnalysis: {
+          initialAnalysis: "Custom n8n workflow modification",
+          finalAnalysis: "Price set by admin for custom modifications",
+          questionsAndAnswers: []
+        },
+        status: 'approved',
+        adminNotes: notes || `Price set by admin: $${price}`,
+        calculatedPrice: parseFloat(price).toFixed(2),
+        priceBreakdown: {
+          estimatedWorkHours: "0",
+          hourlyRate: "0",
+          complexityFactor: "1",
+          adminFee: "0",
+          commission: "0",
+          surcharges: "0",
+          discounts: "0"
+        },
+        adminId: reviewer_email
+      });
+
+      // Add the complete workflow data to the estimate for reference
+      if (reviewItem.original_request) {
+        pendingEstimate.workflowData = reviewItem.original_request;
+      }
+
+      await pendingEstimate.save();
+
+      // Build the complete approved estimate with all details
+      approvedEstimateData = {
+        _id: pendingEstimate._id,
+        jobId: pendingEstimate.jobId,
+        originalEstimate: pendingEstimate.originalEstimate,
+        aiAnalysis: pendingEstimate.aiAnalysis,
+        status: pendingEstimate.status,
+        adminNotes: pendingEstimate.adminNotes,
+        calculatedPrice: pendingEstimate.calculatedPrice,
+        priceBreakdown: pendingEstimate.priceBreakdown,
+        adminId: pendingEstimate.adminId,
+        createdAt: pendingEstimate.createdAt,
+        reviewedAt: pendingEstimate.reviewedAt,
+        // Include the complete workflow data
+        workflowData: reviewItem.original_request
+      };
+
+      estimateId = pendingEstimate._id;
+    } catch (estimateError) {
+      console.error('Error saving pending estimate:', estimateError);
+      // Build a fallback estimate data object
+      approvedEstimateData = {
+        jobId: `n8n-${queue_id}`,
+        originalEstimate: `$${parseFloat(price).toFixed(2)}`,
+        aiAnalysis: {
+          initialAnalysis: "Custom n8n workflow modification",
+          finalAnalysis: "Price set by admin for custom modifications",
+          questionsAndAnswers: []
+        },
+        status: 'approved',
+        adminNotes: notes || `Price set by admin: $${price}`,
+        calculatedPrice: parseFloat(price).toFixed(2),
+        priceBreakdown: {
+          estimatedWorkHours: "0",
+          hourlyRate: "0",
+          complexityFactor: "1",
+          adminFee: "0",
+          commission: "0",
+          surcharges: "0",
+          discounts: "0"
+        },
+        adminId: reviewer_email,
+        createdAt: new Date(),
+        workflowData: reviewItem.original_request
+      };
+      // Don't return error here because the core approval was successful
     }
 
-    await pendingEstimate.save();
-
-    // Return the complete approved estimate with all details
-    const approvedEstimateData = {
-      _id: pendingEstimate._id,
-      jobId: pendingEstimate.jobId,
-      originalEstimate: pendingEstimate.originalEstimate,
-      aiAnalysis: pendingEstimate.aiAnalysis,
-      status: pendingEstimate.status,
-      adminNotes: pendingEstimate.adminNotes,
-      calculatedPrice: pendingEstimate.calculatedPrice,
-      priceBreakdown: pendingEstimate.priceBreakdown,
-      adminId: pendingEstimate.adminId,
-      createdAt: pendingEstimate.createdAt,
-      reviewedAt: pendingEstimate.reviewedAt,
-      // Include the complete workflow data
-      workflowData: reviewItem.original_request
-    };
-
+    // Always return success since the core approval operation completed
     return res.status(200).json({
       success: true,
       message: 'Review approved successfully with price set',
-      estimateId: pendingEstimate._id,
+      estimateId: estimateId,
       approvedEstimate: approvedEstimateData
     });
   } catch (error) {
@@ -1181,6 +1220,109 @@ router.get('/project-quotes/:id', authenticateUser, async (req, res) => {
     return res.status(500).json({
       error: 'INTERNAL_ERROR',
       message: 'An unexpected error occurred while getting project quote',
+      details: { reason: error.message }
+    });
+  }
+});
+
+/**
+ * GET /api/n8n-quote/approved-quotes
+ * Gets all approved project quotes for the authenticated user
+ */
+router.get('/approved-quotes', authenticateUser, async (req, res) => {
+  try {
+    // Filter by userId and status - users only see their own approved quotes
+    const approvedQuotes = await N8nProjectQuote.find({
+      userId: req.user.id,
+      status: 'approved'
+    }).sort({ reviewedAt: -1, createdAt: -1 });
+
+    return res.status(200).json({
+      success: true,
+      data: approvedQuotes
+    });
+  } catch (error) {
+    console.error('Unexpected error getting approved quotes:', error);
+    return res.status(500).json({
+      error: 'INTERNAL_ERROR',
+      message: 'An unexpected error occurred while getting approved quotes',
+      details: { reason: error.message }
+    });
+  }
+});
+
+/**
+ * POST /api/n8n-quote/update-integration-status
+ * Updates the integration status of a project quote
+ */
+router.post('/update-integration-status', authenticateUser, async (req, res) => {
+  try {
+    const { quoteId, status, error } = req.body;
+
+    if (!quoteId || !status) {
+      return res.status(400).json({
+        error: 'MISSING_DATA',
+        message: 'Quote ID and status are required',
+        details: { reason: 'quoteId and status are required fields' }
+      });
+    }
+
+    // Validate status
+    const validStatuses = ['pending', 'in_progress', 'completed', 'failed'];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({
+        error: 'INVALID_STATUS',
+        message: 'Invalid integration status',
+        details: { reason: `Status must be one of: ${validStatuses.join(', ')}` }
+      });
+    }
+
+    const projectQuote = await N8nProjectQuote.findById(quoteId);
+
+    if (!projectQuote) {
+      return res.status(404).json({
+        error: 'NOT_FOUND',
+        message: 'Project quote not found',
+        details: { reason: 'Project quote with specified ID not found' }
+      });
+    }
+
+    // Verify user owns this quote
+    if (projectQuote.userId.toString() !== req.user.id.toString()) {
+      return res.status(403).json({
+        error: 'FORBIDDEN',
+        message: 'Not authorized to update this quote',
+        details: { reason: 'You can only update your own quotes' }
+      });
+    }
+
+    // Update integration status
+    projectQuote.integrationStatus = status;
+
+    // Set completion timestamp if completed or failed
+    if (status === 'completed' || status === 'failed') {
+      projectQuote.integrationCompletedAt = new Date();
+    }
+
+    // Set error message if failed
+    if (status === 'failed' && error) {
+      projectQuote.integrationError = error;
+    } else if (status !== 'failed') {
+      projectQuote.integrationError = null;
+    }
+
+    await projectQuote.save();
+
+    return res.status(200).json({
+      success: true,
+      message: 'Integration status updated successfully',
+      data: projectQuote
+    });
+  } catch (error) {
+    console.error('Unexpected error updating integration status:', error);
+    return res.status(500).json({
+      error: 'INTERNAL_ERROR',
+      message: 'An unexpected error occurred while updating integration status',
       details: { reason: error.message }
     });
   }

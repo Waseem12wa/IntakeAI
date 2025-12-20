@@ -25,13 +25,13 @@ const N8nProjectQuoteSchema = new mongoose.Schema({
     type: Number,
     required: true
   },
-  
+
   // Customer information
   customerEmail: {
     type: String,
     required: false,
     validate: {
-      validator: function(v) {
+      validator: function (v) {
         // Allow null, undefined, or non-empty strings
         return v == null || v.length > 0;
       },
@@ -42,7 +42,7 @@ const N8nProjectQuoteSchema = new mongoose.Schema({
     type: String,
     default: ''
   },
-  
+
   // Quote status and approval
   status: {
     type: String,
@@ -57,7 +57,7 @@ const N8nProjectQuoteSchema = new mongoose.Schema({
     type: String,
     default: ''
   },
-  
+
   // Pricing details
   basePrice: {
     type: Number,
@@ -71,7 +71,7 @@ const N8nProjectQuoteSchema = new mongoose.Schema({
     type: Number,
     required: true
   },
-  
+
   // Detailed price breakdown
   priceBreakdown: {
     estimatedWorkHours: { type: Number, default: 0 },
@@ -82,7 +82,7 @@ const N8nProjectQuoteSchema = new mongoose.Schema({
     surcharges: { type: Number, default: 0 },
     discounts: { type: Number, default: 0 }
   },
-  
+
   // Node details with individual pricing
   nodes: [{
     nodeId: {
@@ -116,7 +116,7 @@ const N8nProjectQuoteSchema = new mongoose.Schema({
       default: false
     }
   }],
-  
+
   // Modifications requested
   modifications: [{
     description: String,
@@ -130,13 +130,28 @@ const N8nProjectQuoteSchema = new mongoose.Schema({
       default: false
     }
   }],
-  
+
   // Workflow data
   workflowData: {
     type: mongoose.Schema.Types.Mixed,
     default: null
   },
-  
+
+  // Integration status tracking
+  integrationStatus: {
+    type: String,
+    enum: ['pending', 'in_progress', 'completed', 'failed'],
+    default: 'pending'
+  },
+  integrationCompletedAt: {
+    type: Date,
+    default: null
+  },
+  integrationError: {
+    type: String,
+    default: null
+  },
+
   // Timestamps
   createdAt: {
     type: Date,
@@ -153,7 +168,7 @@ const N8nProjectQuoteSchema = new mongoose.Schema({
 });
 
 // Update the updatedAt field before saving
-N8nProjectQuoteSchema.pre('save', function(next) {
+N8nProjectQuoteSchema.pre('save', function (next) {
   this.updatedAt = new Date();
   next();
 });
