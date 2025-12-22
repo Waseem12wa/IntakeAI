@@ -14,6 +14,7 @@ import N8nQuoteGenerator from './pages/N8nQuoteGenerator';
 import N8nQuoteChat from './pages/N8nQuoteChat';
 import N8nProjectQuote from './pages/N8nProjectQuote'; // Keep this for project quote details
 import AdminDashboard from './components/AdminDashboard';
+import AdminLogin from './pages/AdminLogin'; // New import
 import Dashboard from './pages/Dashboard';
 import Jobs from './pages/Jobs';
 import JobDetail from './pages/JobDetail'; // Add this import
@@ -536,6 +537,7 @@ export default function App() {
                   <Route path="/jobs/:id" element={<JobDetail />} /> {/* Add this route */}
                   <Route path="/post-project" element={<PostProject />} />   {/* ✅ corrected */}
                   <Route path="/admin" element={<AdminDashboard />} />
+                  <Route path="/admin-login" element={<AdminLogin />} />
                 </Routes>
               </div>
               <Footer />

@@ -305,8 +305,15 @@ Would you like me to generate a detailed quote report?`
 
         console.log('📤 Uploading files for analysis...');
 
+        const token = localStorage.getItem('authToken') || localStorage.getItem('adminToken');
+        const headers = {};
+        if (token) {
+          headers['x-auth-token'] = token;
+        }
+
         const response = await fetch('/api/ai/upload-analyze', {
           method: 'POST',
+          headers: headers,
           body: formData
         });
 
@@ -338,7 +345,7 @@ Would you like me to generate a detailed quote report?`
             email: 'fileupload@example.com',
             location: 'Remote',
             type: 'Freelance',
-            salary: 'TBD',
+            salary: data.estimate || 'TBD',
             description: data.description || 'Project created from uploaded files',
             skills: data.extractedSkills || [],
             requirements: 'See uploaded files for requirements',

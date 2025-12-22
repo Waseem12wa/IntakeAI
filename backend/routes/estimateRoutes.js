@@ -11,22 +11,15 @@ const {
   getApprovedEstimate
 } = require('../controllers/estimateController');
 
-// Basic token authentication middleware for admin routes
-function authMiddleware(req, res, next) {
-	const token = req.headers['x-admin-token'] || req.query.token;
-	const ADMIN_TOKEN = process.env.ADMIN_TOKEN || 'changeme';
-	if (token === ADMIN_TOKEN) {
-		return next();
-	}
-	return res.status(401).json({ success: false, error: 'Unauthorized' });
-}
+// Unified admin authentication middleware
+const { checkAdmin } = require('../middleware/authMiddleware');
 
 // Admin routes (with authentication)
-router.get('/admin/pending', authMiddleware, getPendingEstimates); // Get all pending estimates for admin
-router.get('/admin/approved', authMiddleware, getApprovedEstimates); // Get all approved estimates for admin
-router.get('/admin/:id', authMiddleware, getPendingEstimateById); // Get single estimate details
-router.post('/admin/:id/approve', authMiddleware, approveEstimate); // Admin approves estimate
-router.post('/admin/:id/edit', authMiddleware, editEstimate); // Admin edits estimate
+router.get('/admin/pending', checkAdmin, getPendingEstimates); // Get all pending estimates for admin
+router.get('/admin/approved', checkAdmin, getApprovedEstimates); // Get all approved estimates for admin
+router.get('/admin/:id', checkAdmin, getPendingEstimateById); // Get single estimate details
+router.post('/admin/:id/approve', checkAdmin, approveEstimate); // Admin approves estimate
+router.post('/admin/:id/edit', checkAdmin, editEstimate); // Admin edits estimate
 
 // User/AI bot routes - require authentication
 const { authenticateUser } = require('../middleware/auth');

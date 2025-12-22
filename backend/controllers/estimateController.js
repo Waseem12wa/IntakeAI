@@ -5,7 +5,7 @@ const N8nProjectQuote = require('../models/N8nProjectQuote');
 const getPendingEstimates = async (req, res) => {
   try {
     const estimates = await PendingEstimate.find({ status: 'pending' }).populate('jobId');
-    
+
     res.json({
       success: true,
       estimates: estimates
@@ -22,10 +22,10 @@ const getPendingEstimates = async (req, res) => {
 // Get all approved estimates for admin dashboard
 const getApprovedEstimates = async (req, res) => {
   try {
-    const estimates = await PendingEstimate.find({ 
-      status: { $in: ['approved', 'edited'] } 
+    const estimates = await PendingEstimate.find({
+      status: { $in: ['approved', 'edited'] }
     }).populate('jobId').sort({ reviewedAt: -1 });
-    
+
     res.json({
       success: true,
       estimates: estimates
@@ -43,16 +43,16 @@ const getApprovedEstimates = async (req, res) => {
 const getPendingEstimateById = async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     const estimate = await PendingEstimate.findById(id).populate('jobId');
-    
+
     if (!estimate) {
       return res.status(404).json({
         success: false,
         error: 'Estimate not found'
       });
     }
-    
+
     res.json({
       success: true,
       estimate: estimate
@@ -141,9 +141,9 @@ const approveEstimate = async (req, res) => {
           surcharges: parseFloat(priceBreakdown?.surcharges || 0),
           discounts: parseFloat(priceBreakdown?.discounts || 0)
         };
-        
+
         await n8nQuote.save();
-        
+
         console.log('✅ N8nProjectQuote updated successfully');
       }
     } catch (n8nError) {
@@ -294,13 +294,13 @@ const checkEstimateStatus = async (req, res) => {
 
     // Find the most recent estimate for this job and user
     const latestEstimate = await PendingEstimate.findOne(query).sort({ createdAt: -1 });
-    
+
     if (!latestEstimate) {
       // If not found with exact jobId, check if it's an n8n quote
-      const n8nEstimate = await PendingEstimate.findOne({ 
-        jobId: { $regex: `^n8n-${jobId}` } 
+      const n8nEstimate = await PendingEstimate.findOne({
+        jobId: { $regex: `^n8n-${jobId}` }
       }).sort({ createdAt: -1 });
-      
+
       if (n8nEstimate) {
         // Only return approved if status is explicitly 'approved' or 'edited'
         if (n8nEstimate.status === 'approved' || n8nEstimate.status === 'edited') {
@@ -329,7 +329,7 @@ const checkEstimateStatus = async (req, res) => {
           });
         }
       }
-      
+
       console.log('❌ No estimate found for this job');
       return res.json({
         success: true,
@@ -357,7 +357,7 @@ const checkEstimateStatus = async (req, res) => {
         success: true,
         approved: true,
         estimate: {
-          finalEstimate: latestEstimate.calculatedPrice || latestEstimate.status === 'edited' ? latestEstimate.editedEstimate : latestEstimate.originalEstimate,
+          finalEstimate: (latestEstimate.calculatedPrice !== undefined && latestEstimate.calculatedPrice !== null) ? latestEstimate.calculatedPrice : (latestEstimate.status === 'edited' ? latestEstimate.editedEstimate : latestEstimate.originalEstimate),
           calculatedPrice: latestEstimate.calculatedPrice,
           adminNotes: latestEstimate.adminNotes,
           reviewedAt: latestEstimate.reviewedAt,
@@ -386,7 +386,7 @@ const checkEstimateStatus = async (req, res) => {
 const getApprovedEstimate = async (req, res) => {
   try {
     const { jobId } = req.params;
-    
+
     // Build query with userId filter if authenticated
     if (!req.user || !req.user.id) {
       return res.status(401).json({
@@ -401,7 +401,7 @@ const getApprovedEstimate = async (req, res) => {
       userId: req.user.id,
       status: { $in: ['approved', 'edited'] }
     }).populate('jobId');
-    
+
     // If not found, check if it's an n8n quote
     if (!estimate) {
       estimate = await PendingEstimate.findOne({
@@ -410,14 +410,14 @@ const getApprovedEstimate = async (req, res) => {
         status: { $in: ['approved', 'edited'] }
       }).populate('jobId');
     }
-    
+
     if (!estimate) {
       return res.status(404).json({
         success: false,
         error: 'No approved estimate found for this job'
       });
     }
-    
+
     res.json({
       success: true,
       estimate: {

@@ -1,67 +1,38 @@
-/**
- * Script to clear all n8n quotes and projects from the database
- * Run this with: node clearN8nData.js
- */
-
-const mongoose = require('mongoose');
-const path = require('path');
-const fs = require('fs');
 require('dotenv').config();
+const mongoose = require('mongoose');
+const Project = require('./models/Project'); // Adjust path if needed
+const N8nQuote = require('./models/N8nQuote'); // Adjust path if needed
 
-// Import models
-const N8nQuoteChat = require('./models/N8nQuoteChat');
-const N8nProjectQuote = require('./models/N8nProjectQuote');
-const PendingEstimate = require('./models/PendingEstimate');
-
-// Review queue file path
-const REVIEW_QUEUE_FILE = path.join(__dirname, 'data/review_queue.json');
-
-async function clearN8nData() {
+const clearData = async () => {
     try {
-        console.log('🔌 Connecting to MongoDB...');
-        await mongoose.connect(process.env.MONGODB_URI);
-        console.log('✅ Connected to MongoDB');
+        await mongoose.connect(process.env.MONGO_URI);
+        console.log('Connected to MongoDB');
 
-        // Delete all N8nQuoteChat documents
-        console.log('\n🗑️  Deleting N8nQuoteChat documents...');
-        const chatResult = await N8nQuoteChat.deleteMany({});
-        console.log(`✅ Deleted ${chatResult.deletedCount} N8nQuoteChat documents`);
+        // 1. Delete all N8nQuotes that are Approved or Rejected (keep Pending for testing if desired, or delete all?)
+        // User asked: "delete all the previos data from database that approved by admin already"
+        const deleteResult = await N8nQuote.deleteMany({ status: { $in: ['Approved', 'Rejected', 'Completed'] } });
+        console.log(`Deleted ${deleteResult.deletedCount} processed quotes.`);
 
-        // Delete all N8nProjectQuote documents
-        console.log('\n🗑️  Deleting N8nProjectQuote documents...');
-        const projectResult = await N8nProjectQuote.deleteMany({});
-        console.log(`✅ Deleted ${projectResult.deletedCount} N8nProjectQuote documents`);
+        // 2. Reset Projects that were linked to these quotes
+        // We want to effectively "Un-approve" them so they show as pending again or just clean them up?
+        // "Approved quotes... likely referring to the ghosting ones".
+        // Let's reset any Active project that came from n8n to 'Analysis In Progress' or similar if that's the start state.
+        // Or just clear the approvedQuoteId.
 
-        // Delete all PendingEstimate documents (projects)
-        console.log('\n🗑️  Deleting PendingEstimate documents (projects)...');
-        const estimateResult = await PendingEstimate.deleteMany({});
-        console.log(`✅ Deleted ${estimateResult.deletedCount} PendingEstimate documents`);
+        const updateResult = await Project.updateMany(
+            { approvedQuoteId: { $exists: true, $ne: null } },
+            {
+                $unset: { approvedQuoteId: "", n8nPricing: "" },
+                $set: { status: 'Analysis In Progress' } // Reset status
+            }
+        );
+        console.log(`Reset ${updateResult.modifiedCount} projects.`);
 
-        // Clear review queue file
-        console.log('\n🗑️  Clearing review queue...');
-        if (fs.existsSync(REVIEW_QUEUE_FILE)) {
-            fs.writeFileSync(REVIEW_QUEUE_FILE, JSON.stringify([], null, 2));
-            console.log('✅ Review queue cleared');
-        } else {
-            console.log('ℹ️  Review queue file does not exist');
-        }
-
-        console.log('\n✅ All n8n data and projects have been cleared successfully!');
-        console.log('\n📊 Summary:');
-        console.log(`   - N8nQuoteChat: ${chatResult.deletedCount} deleted`);
-        console.log(`   - N8nProjectQuote: ${projectResult.deletedCount} deleted`);
-        console.log(`   - PendingEstimate: ${estimateResult.deletedCount} deleted`);
-        console.log(`   - Review queue: cleared`);
-
-    } catch (error) {
-        console.error('❌ Error clearing n8n data:', error);
-        process.exit(1);
-    } finally {
-        await mongoose.connection.close();
-        console.log('\n🔌 MongoDB connection closed');
         process.exit(0);
+    } catch (error) {
+        console.error('Error clearing data:', error);
+        process.exit(1);
     }
-}
+};
 
-// Run the script
-clearN8nData();
+clearData();

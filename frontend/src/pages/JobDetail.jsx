@@ -10,19 +10,19 @@ function FormattedMessage({ text }) {
       .replace(/## Step \d+:\s*/g, '') // Remove ## Step 1: etc
       .replace(/##\s+/g, '') // Remove remaining ##
       .replace(/# /g, ''); // Remove # headers
-    
+
     // Split by double asterisks for sections like **Summary**
     const parts = cleanText.split(/(\*\*[^*]+\*\*)/);
-    
+
     return parts.map((part, index) => {
       if (part.match(/\*\*[^*]+\*\*/)) {
         // This is a header like **Summary**
         const headerText = part.replace(/\*\*/g, '');
         return (
-          <div key={index} style={{ 
-            fontSize: '1.1rem', 
-            fontWeight: 'bold', 
-            color: '#1976d2', 
+          <div key={index} style={{
+            fontSize: '1.1rem',
+            fontWeight: 'bold',
+            color: '#1976d2',
             marginTop: index > 0 ? '20px' : '0',
             marginBottom: '12px'
           }}>
@@ -35,7 +35,7 @@ function FormattedMessage({ text }) {
         return lines.map((line, lineIndex) => {
           const trimmed = line.trim();
           if (!trimmed) return null;
-          
+
           // Check if it's a numbered question
           if (trimmed.match(/^\d+\./)) {
             return (
@@ -50,7 +50,7 @@ function FormattedMessage({ text }) {
               </div>
             );
           }
-          
+
           // Regular paragraph
           return (
             <div key={`${index}-${lineIndex}`} style={{
@@ -75,7 +75,7 @@ export default function JobDetail() {
   const [job, setJob] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  
+
   // AI bot states
   const [aiMessages, setAiMessages] = useState([]);
   const [userInput, setUserInput] = useState('');
@@ -88,6 +88,10 @@ export default function JobDetail() {
   const [estimateApproved, setEstimateApproved] = useState(false); // New state for approval status
   const [approvedEstimateData, setApprovedEstimateData] = useState(null); // New state for approved estimate data
 
+  // Edit State
+  const [isEditing, setIsEditing] = useState(false);
+  const [formData, setFormData] = useState({});
+
   useEffect(() => {
     const fetchJob = async () => {
       setLoading(true);
@@ -98,7 +102,7 @@ export default function JobDetail() {
         if (!res.ok) throw new Error('Failed to fetch job');
         const jobData = await res.json();
         setJob(jobData.data);
-        
+
         // Initialize bot with job details
         await initializeBot(jobData.data);
       } catch (err) {
@@ -120,14 +124,14 @@ export default function JobDetail() {
         headers: getAuthHeaders()
       });
       const existingData = await existingRes.json();
-      
+
       if (existingData.success && existingData.hasExisting) {
         // Restore existing conversation state
         const conversation = existingData.conversation;
         setAiMessages(conversation.messages || []);
         setAnswers(conversation.answers || []);
         setFinalEstimateGiven(conversation.finalEstimateGiven || false);
-        
+
         // If all questions were answered, don't show questions mode
         if (conversation.answers && conversation.answers.length > 0) {
           setIsQuestionsMode(false);
@@ -135,13 +139,13 @@ export default function JobDetail() {
         }
         return;
       }
-      
+
       // No existing conversation, get fresh analysis
       const aiRes = await fetch('/api/ai/analyzeJob', {
         method: 'POST',
         headers: getAuthHeaders(),
-        body: JSON.stringify({ 
-          job: jobData, 
+        body: JSON.stringify({
+          job: jobData,
           initial: true
         })
       });
@@ -156,7 +160,7 @@ export default function JobDetail() {
           // Extract only the summary part before Question 1
           summaryMessage = summaryMessage.substring(0, questionMatch).trim();
         }
-        
+
         const initialMessages = [{ role: 'ai', text: summaryMessage }];
         if (aiData.questions && aiData.questions.length > 0) {
           initialMessages.push({
@@ -168,7 +172,7 @@ export default function JobDetail() {
         setQuestions(aiData.questions || []);
         setCurrentQuestionIndex(0);
         setIsQuestionsMode(aiData.questions && aiData.questions.length > 0);
-        
+
         // Save initial progress
         if (jobData._id || jobData.id) {
           try {
@@ -206,7 +210,7 @@ export default function JobDetail() {
     // Add user message to chat
     const userMessage = { role: 'user', text: messageToSend };
     setAiMessages(prev => [...prev, userMessage]);
-    
+
     // If in questions mode, store the answer
     let newAnswers = answers;
     if (isQuestionsMode && currentQuestionIndex < questions.length) {
@@ -216,7 +220,7 @@ export default function JobDetail() {
       };
       newAnswers = [...answers, newAnswer];
       setAnswers(newAnswers);
-      
+
       // Save progress after each answer
       if (job && (job._id || job.id)) {
         try {
@@ -235,7 +239,7 @@ export default function JobDetail() {
         }
       }
     }
-    
+
     setUserInput('');
     setIsBotLoading(true);
 
@@ -246,9 +250,9 @@ export default function JobDetail() {
           // Move to next question and display it as a message
           const nextIndex = currentQuestionIndex + 1;
           setCurrentQuestionIndex(nextIndex);
-          setAiMessages(prev => [...prev, { 
-            role: 'ai', 
-            text: `**Question ${nextIndex + 1}:**\n\n${questions[nextIndex]}` 
+          setAiMessages(prev => [...prev, {
+            role: 'ai',
+            text: `**Question ${nextIndex + 1}:**\n\n${questions[nextIndex]}`
           }]);
         } else {
           // All questions answered, finalize estimate
@@ -259,19 +263,19 @@ export default function JobDetail() {
         const res = await fetch('/api/ai/chat', {
           method: 'POST',
           headers: getAuthHeaders(),
-          body: JSON.stringify({ 
+          body: JSON.stringify({
             message: messageToSend,
             job: job
           }),
         });
 
         if (!res.ok) throw new Error('Failed to get response from AI');
-        
+
         const data = await res.json();
         const aiMessage = { role: 'ai', text: data.message };
         const updatedMessages = [...prev, aiMessage];
         setAiMessages(updatedMessages);
-        
+
         // Save conversation progress for general chat
         if (job && (job._id || job.id)) {
           try {
@@ -299,7 +303,7 @@ export default function JobDetail() {
   // Add polling for estimate approval status
   useEffect(() => {
     let pollInterval;
-    
+
     if (finalEstimateGiven && !estimateApproved) {
       // Start polling for estimate approval status
       pollInterval = setInterval(async () => {
@@ -314,13 +318,13 @@ export default function JobDetail() {
               setApprovedEstimateData(data.estimate);
               // Add a simple message to the chat showing only the approved estimate cost
               const finalCost = data.estimate.calculatedPrice || data.estimate.finalEstimate || 'N/A';
-              const approvalMessage = { 
-                role: 'ai', 
+              const approvalMessage = {
+                role: 'ai',
                 text: `🎉 Estimate Approved by Admin!
 
 ✅ Your project estimate has been approved by the admin!
 
-Final Project Cost: $${finalCost}` 
+Final Project Cost: $${finalCost}`
               };
               setAiMessages(prev => [...prev, approvalMessage]);
             }
@@ -330,7 +334,7 @@ Final Project Cost: $${finalCost}`
         }
       }, 5000); // Poll every 5 seconds
     }
-    
+
     // Clean up interval on unmount or when conditions change
     return () => {
       if (pollInterval) {
@@ -344,7 +348,7 @@ Final Project Cost: $${finalCost}`
       const res = await fetch('/api/ai/finalizeEstimate', {
         method: 'POST',
         headers: getAuthHeaders(),
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           job: job,
           answers: answers,
           originalEstimate: null
@@ -352,16 +356,16 @@ Final Project Cost: $${finalCost}`
       });
 
       if (!res.ok) throw new Error('Failed to finalize estimate');
-      
+
       const data = await res.json();
-      
+
       // Add final analysis to messages
       const finalMessage = { role: 'ai', text: data.message || data.finalAnalysis || 'Estimate finalized successfully. Sending to admin for approval...' };
       const updatedMessages = [...aiMessages, finalMessage];
       setAiMessages(updatedMessages);
       setFinalEstimateGiven(true);
       setIsQuestionsMode(false);
-      
+
       // Save conversation progress after finalizing estimate
       if (job && (job._id || job.id)) {
         try {
@@ -400,11 +404,11 @@ Final Project Cost: $${finalCost}`
 
   if (loading) {
     return (
-      <div style={{ 
-        minHeight: '100vh', 
-        background: '#f9fafb', 
-        display: 'flex', 
-        justifyContent: 'center', 
+      <div style={{
+        minHeight: '100vh',
+        background: '#f9fafb',
+        display: 'flex',
+        justifyContent: 'center',
         alignItems: 'center',
         fontFamily: "'Google Sans', 'Roboto', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif"
       }}>
@@ -415,11 +419,11 @@ Final Project Cost: $${finalCost}`
 
   if (error) {
     return (
-      <div style={{ 
-        minHeight: '100vh', 
-        background: '#f9fafb', 
-        display: 'flex', 
-        justifyContent: 'center', 
+      <div style={{
+        minHeight: '100vh',
+        background: '#f9fafb',
+        display: 'flex',
+        justifyContent: 'center',
         alignItems: 'center',
         fontFamily: "'Google Sans', 'Roboto', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif"
       }}>
@@ -432,11 +436,11 @@ Final Project Cost: $${finalCost}`
 
   if (!job) {
     return (
-      <div style={{ 
-        minHeight: '100vh', 
-        background: '#f9fafb', 
-        display: 'flex', 
-        justifyContent: 'center', 
+      <div style={{
+        minHeight: '100vh',
+        background: '#f9fafb',
+        display: 'flex',
+        justifyContent: 'center',
         alignItems: 'center',
         fontFamily: "'Google Sans', 'Roboto', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif"
       }}>
@@ -446,40 +450,91 @@ Final Project Cost: $${finalCost}`
   }
 
   return (
-    <div style={{ 
-      minHeight: '100vh', 
-      background: '#f9fafb', 
-      fontFamily: "'Google Sans', 'Roboto', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif" 
+    <div style={{
+      minHeight: '100vh',
+      background: '#f9fafb',
+      fontFamily: "'Google Sans', 'Roboto', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif"
     }}>
       <div style={{ maxWidth: 1000, margin: '0 auto', padding: '32px 20px' }}>
         {/* Header */}
-        <div style={{ 
-          display: 'flex', 
-          justifyContent: 'space-between', 
-          alignItems: 'center', 
-          marginBottom: '24px' 
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: '24px'
         }}>
           <h2 style={{ fontWeight: 800, fontSize: '2rem', color: '#1976d2' }}>
             Project Details
           </h2>
-          <button
-            onClick={() => navigate('/jobs')}
-            style={{
-              background: '#6c757d',
-              color: '#fff',
-              padding: '10px 20px',
-              border: 'none',
-              borderRadius: 8,
-              fontWeight: 600,
-              fontSize: 15,
-              cursor: 'pointer',
-              transition: 'background 0.2s ease'
-            }}
-            onMouseEnter={(e) => e.target.style.background = '#5a6268'}
-            onMouseLeave={(e) => e.target.style.background = '#6c757d'}
-          >
-            Back to Projects
-          </button>
+          <div style={{ display: 'flex', gap: '10px' }}>
+            {/* Edit Button */}
+            <button
+              onClick={() => {
+                if (isEditing) {
+                  // Save logic
+                  const handleUpdate = async () => {
+                    try {
+                      const res = await fetch(`/api/projects/${job._id || job.id}`, {
+                        method: 'PUT',
+                        headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
+                        body: JSON.stringify(formData)
+                      });
+                      if (res.ok) {
+                        const updated = await res.json();
+                        setJob(updated);
+                        setIsEditing(false);
+                        alert('Project updated!');
+                      } else {
+                        alert('Update failed');
+                      }
+                    } catch (err) { console.error(err); alert('Update failed'); }
+                  };
+                  handleUpdate();
+                } else {
+                  setFormData(job);
+                  setIsEditing(true);
+                }
+              }}
+              style={{
+                background: isEditing ? '#10b981' : '#3b82f6',
+                color: '#fff',
+                padding: '10px 20px',
+                border: 'none',
+                borderRadius: 8,
+                fontWeight: 600,
+                fontSize: 15,
+                cursor: 'pointer',
+              }}
+            >
+              {isEditing ? 'Save Changes' : 'Edit Project'}
+            </button>
+            {isEditing && (
+              <button
+                onClick={() => setIsEditing(false)}
+                style={{ background: '#6c757d', color: '#fff', padding: '10px 20px', border: 'none', borderRadius: 8, cursor: 'pointer' }}
+              >
+                Cancel
+              </button>
+            )}
+            <button
+              onClick={() => navigate('/jobs')}
+              style={{
+                background: '#6c757d',
+                color: '#fff',
+                padding: '10px 20px',
+                border: 'none',
+                borderRadius: 8,
+                fontWeight: 600,
+                fontSize: 15,
+                cursor: 'pointer',
+                transition: 'background 0.2s ease'
+              }}
+              onMouseEnter={(e) => e.target.style.background = '#5a6268'}
+              onMouseLeave={(e) => e.target.style.background = '#6c757d'}
+            >
+              Back to Projects
+            </button>
+          </div>
         </div>
 
         {/* Job Details */}
@@ -490,48 +545,77 @@ Final Project Cost: $${finalCost}`
           padding: 32,
           marginBottom: 24
         }}>
-          <h3 style={{ fontWeight: 700, fontSize: '1.5rem', color: '#222', marginBottom: 16 }}>
-            {job.title}
-          </h3>
-          
+          {isEditing ? (
+            <input
+              value={formData.title || ''}
+              onChange={e => setFormData({ ...formData, title: e.target.value })}
+              style={{ fontSize: '1.5rem', fontWeight: 700, width: '100%', marginBottom: 16, padding: 8, border: '1px solid #ccc', borderRadius: 4 }}
+            />
+          ) : (
+            <h3 style={{ fontWeight: 700, fontSize: '1.5rem', color: '#222', marginBottom: 16 }}>
+              {job.title}
+            </h3>
+          )}
+
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 20 }}>
             <div>
               <div style={{ color: '#6c757d', fontSize: 14, marginBottom: 4 }}>Company</div>
-              <div style={{ fontWeight: 600, fontSize: 16, color: '#1976d2' }}>
-                {job.company}
-              </div>
+              {isEditing ? (
+                <input value={formData.company || ''} onChange={e => setFormData({ ...formData, company: e.target.value })} style={{ width: '100%', padding: 4 }} />
+              ) : (
+                <div style={{ fontWeight: 600, fontSize: 16, color: '#1976d2' }}>
+                  {job.company}
+                </div>
+              )}
             </div>
-            
+
             <div>
               <div style={{ color: '#6c757d', fontSize: 14, marginBottom: 4 }}>Location</div>
-              <div style={{ fontWeight: 600, fontSize: 16, color: '#222' }}>
-                {job.location}
-              </div>
+              {isEditing ? (
+                <input value={formData.location || ''} onChange={e => setFormData({ ...formData, location: e.target.value })} style={{ width: '100%', padding: 4 }} />
+              ) : (
+                <div style={{ fontWeight: 600, fontSize: 16, color: '#222' }}>
+                  {job.location}
+                </div>
+              )}
             </div>
-            
+
             <div>
               <div style={{ color: '#6c757d', fontSize: 14, marginBottom: 4 }}>Type</div>
-              <div style={{ fontWeight: 600, fontSize: 16, color: '#222' }}>
-                {job.type}
-              </div>
-            </div>
-            
-            {job.salary && (
-              <div>
-                <div style={{ color: '#6c757d', fontSize: 14, marginBottom: 4 }}>Salary</div>
-                <div style={{ fontWeight: 600, fontSize: 16, color: '#059669' }}>
-                  {job.salary}
+              {isEditing ? (
+                <input value={formData.type || ''} onChange={e => setFormData({ ...formData, type: e.target.value })} style={{ width: '100%', padding: 4 }} />
+              ) : (
+                <div style={{ fontWeight: 600, fontSize: 16, color: '#222' }}>
+                  {job.type}
                 </div>
+              )}
+            </div>
+
+            <div>
+              <div style={{ color: '#6c757d', fontSize: 14, marginBottom: 4 }}>Salary</div>
+              {isEditing ? (
+                <input value={formData.salary || ''} onChange={e => setFormData({ ...formData, salary: e.target.value })} style={{ width: '100%', padding: 4 }} />
+              ) : (
+                <div style={{ fontWeight: 600, fontSize: 16, color: '#059669' }}>
+                  {job.salary || 'Not specified'}
+                </div>
+              )}
+            </div>
+
+            {isEditing && (
+              <div>
+                <div style={{ color: '#6c757d', fontSize: 14, marginBottom: 4 }}>Approved Quote ID (Manual)</div>
+                <input value={formData.approvedQuoteId || ''} onChange={e => setFormData({ ...formData, approvedQuoteId: e.target.value })} style={{ width: '100%', padding: 4 }} placeholder="Enter Quote ID" />
               </div>
             )}
           </div>
-          
+
           <div style={{ marginBottom: 20 }}>
             <div style={{ color: '#6c757d', fontSize: 14, marginBottom: 4, fontWeight: 600 }}>Description</div>
-            <div style={{ 
-              padding: 16, 
-              background: '#f8f9fa', 
-              borderRadius: 8, 
+            <div style={{
+              padding: 16,
+              background: '#f8f9fa',
+              borderRadius: 8,
               border: '1px solid #e9ecef',
               fontSize: 15,
               lineHeight: 1.6
@@ -539,7 +623,7 @@ Final Project Cost: $${finalCost}`
               {job.description || job.requirements}
             </div>
           </div>
-          
+
           {Array.isArray(job.skills) && job.skills.length > 0 && (
             <div style={{ marginBottom: 20 }}>
               <div style={{ color: '#6c757d', fontSize: 14, marginBottom: 8, fontWeight: 600 }}>Skills Required</div>
@@ -559,14 +643,14 @@ Final Project Cost: $${finalCost}`
               </div>
             </div>
           )}
-          
+
           {job.benefits && (
             <div style={{ marginBottom: 20 }}>
               <div style={{ color: '#6c757d', fontSize: 14, marginBottom: 4, fontWeight: 600 }}>Benefits</div>
-              <div style={{ 
-                padding: 16, 
-                background: '#f8f9fa', 
-                borderRadius: 8, 
+              <div style={{
+                padding: 16,
+                background: '#f8f9fa',
+                borderRadius: 8,
                 border: '1px solid #e9ecef',
                 fontSize: 15
               }}>
@@ -581,12 +665,12 @@ Final Project Cost: $${finalCost}`
           <h3 style={{ fontWeight: 700, fontSize: '1.3rem', color: '#222', marginBottom: 16 }}>
             Project Assistant
           </h3>
-          
+
           {/* Chat messages without box styling */}
           <div style={{ marginBottom: 16 }}>
             {aiMessages.map((message, index) => (
-              <div 
-                key={index} 
+              <div
+                key={index}
                 style={{
                   display: 'flex',
                   justifyContent: message.role === 'user' ? 'flex-end' : 'flex-start',
@@ -633,7 +717,7 @@ Final Project Cost: $${finalCost}`
               </div>
             )}
           </div>
-          
+
           {/* Input area - hide when final estimate is given or when waiting for admin approval */}
           {!finalEstimateGiven && (
             <div style={{ display: 'flex', gap: 12 }}>
@@ -672,13 +756,13 @@ Final Project Cost: $${finalCost}`
               </button>
             </div>
           )}
-          
+
           {/* Show message when estimate is sent for approval */}
           {finalEstimateGiven && !estimateApproved && (
-            <div style={{ 
-              padding: '16px', 
-              background: '#fffbeb', 
-              border: '1px solid #fde68a', 
+            <div style={{
+              padding: '16px',
+              background: '#fffbeb',
+              border: '1px solid #fde68a',
               borderRadius: '8px',
               textAlign: 'center',
               color: '#92400e'
@@ -686,13 +770,13 @@ Final Project Cost: $${finalCost}`
               ⏳ Your project estimate has been sent to admin for approval.
             </div>
           )}
-          
+
           {/* Show approved message when estimate is approved */}
           {estimateApproved && (
-            <div style={{ 
-              padding: '16px', 
-              background: '#f0fdf4', 
-              border: '1px solid #bbf7d0', 
+            <div style={{
+              padding: '16px',
+              background: '#f0fdf4',
+              border: '1px solid #bbf7d0',
               borderRadius: '8px',
               textAlign: 'center',
               color: '#166534'
@@ -702,9 +786,9 @@ Final Project Cost: $${finalCost}`
           )}
 
           {isQuestionsMode && (
-            <div style={{ 
-              marginTop: 12, 
-              color: '#6c757d', 
+            <div style={{
+              marginTop: 12,
+              color: '#6c757d',
               fontSize: 14,
               textAlign: 'center'
             }}>

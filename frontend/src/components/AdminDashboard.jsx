@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { listSubmissions, getSubmission, downloadDocument, listJobs, getJob } from '../api/api';
+import { useNavigate } from 'react-router-dom';
+import { listSubmissions, getSubmission, downloadDocument, listJobs, getJob, loginUser } from '../api/api';
 import { useNotification } from '../context/NotificationContext';
 import IntegrationManager from './IntegrationManager';
 import jsPDF from 'jspdf';
@@ -13,6 +14,7 @@ export default function AdminDashboard() {
   const [selected, setSelected] = useState(null);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
   const [approvedEstimate, setApprovedEstimate] = useState(null);
   const [loadingEstimate, setLoadingEstimate] = useState(false);
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false); // New state for authentication status
@@ -120,6 +122,9 @@ export default function AdminDashboard() {
         setSelectedN8nReview(null);
         setN8nPrice('');
 
+        // Remove from local state immediately to prevent ghosting
+        setPendingN8nReviews(prev => prev.filter(r => r.queue_id !== queueId));
+
         // Don't throw any errors - approval was successful
         return;
       } else {
@@ -143,42 +148,53 @@ export default function AdminDashboard() {
     }
   };
 
-  // Load projects and pending reviews when token is set
-  useEffect(() => {
-    if (isAdminAuthenticated) {
-      fetchPendingN8nReviews();
-    }
-  }, [isAdminAuthenticated]);
-
-  const handleLogin = async () => {
-    setLoading(true);
-    setError(null);
-
-    // Hardcoded admin credentials
-    const ADMIN_EMAIL = 'admin@intake.ai';
-    const ADMIN_PASSWORD = 'admin1234';
-    const ADMIN_TOKEN = 'changeme'; // Use the existing token for API calls
-
+  // Handle n8n quote rejection
+  const handleN8nQuoteReject = async (queueId) => {
+    if (!window.confirm("Are you sure you want to reject this request?")) return;
     try {
-      // Validate credentials
-      if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
-        // Set the token for API calls
-        setToken(ADMIN_TOKEN);
+      const response = await fetch(`/api/n8n-quote/reject/${queueId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
 
-        // Load projects using the token
-        const res = await listJobs(ADMIN_TOKEN);
-        setProjects(res.jobs || []);
-        setIsAdminAuthenticated(true);
+      if (response.ok) {
+        showGeneralNotification('Request rejected successfully', 'success');
+        // Remove from local state immediately to prevent ghosting
+        setPendingN8nReviews(prev => prev.filter(r => r.queue_id !== queueId));
+        // Refresh cleanly in background
+        fetchPendingN8nReviews();
       } else {
-        setError('Invalid email or password.');
-        setIsAdminAuthenticated(false);
+        showGeneralNotification('Failed to reject request', 'error');
       }
     } catch (err) {
-      setError('Invalid credentials or server error.');
-      setIsAdminAuthenticated(false);
+      console.error('Error rejecting quote:', err);
+      showGeneralNotification('Error rejecting request', 'error');
     }
-    setLoading(false);
   };
+
+  // Load projects and pending reviews when token is set
+  useEffect(() => {
+    const storedToken = localStorage.getItem('adminToken');
+    if (storedToken) {
+      setToken(storedToken);
+      setIsAdminAuthenticated(true);
+      listJobs(storedToken).then(res => setProjects(res.jobs || [])).catch(console.error);
+      fetchPendingN8nReviews(); // This might fail if token state isn't updated yet, but we'll see
+    } else {
+      setIsAdminAuthenticated(false);
+      navigate('/admin-login');
+    }
+  }, []);
+
+  useEffect(() => {
+    if (token) {
+      fetchPendingN8nReviews();
+    }
+  }, [token]);
+
+  // Login logic moved to AdminLogin.jsx
 
   const handleSelect = async (id) => {
     setLoading(true);
@@ -205,7 +221,7 @@ export default function AdminDashboard() {
       // First check for job-specific pending estimates
       const res = await fetch('/api/estimates/admin/pending', {
         headers: {
-          'x-admin-token': token
+          'Authorization': `Bearer ${token}`
         }
       });
 
@@ -303,7 +319,7 @@ export default function AdminDashboard() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-admin-token': token
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify(requestBody)
       });
@@ -362,7 +378,11 @@ export default function AdminDashboard() {
     setLoadingEstimate(true);
     try {
       console.log('Fetching approved estimate for jobId:', jobId);
-      const res = await fetch(`/api/estimates/approved/${jobId}`);
+      const res = await fetch(`/api/estimates/approved/${jobId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
       console.log('API response status:', res.status);
 
       if (res.ok) {
@@ -512,7 +532,8 @@ export default function AdminDashboard() {
           addText('Formula: (Hours × Rate × Complexity) + Fees + Commission + Surcharges - Discounts', 10, false, '#666666');
         }
       } else {
-        addText(`Original AI Estimate: ${approvedEstimate.originalEstimate}`, 14, true, '#059669');
+        const displayPrice = approvedEstimate.originalEstimate || approvedEstimate.calculatedPrice || 'TBD';
+        addText(`Original AI Estimate: ${displayPrice}`, 14, true, '#059669');
       }
 
       // Add workflow data if available (for n8n quotes)
@@ -553,6 +574,10 @@ export default function AdminDashboard() {
       alert('Failed to generate PDF. Please check console for details.');
     }
   };
+
+  if (!isAdminAuthenticated) {
+    return null; // or a loading spinner, since we redirect
+  }
 
   return (
     <div style={{
@@ -612,136 +637,6 @@ export default function AdminDashboard() {
           border: '1px solid #e5e5e5',
           padding: '24px'
         }}>
-
-          {/* Authentication Section */}
-          <div style={{
-            background: '#f8f9fa',
-            borderRadius: '12px',
-            padding: '20px',
-            marginBottom: '24px',
-            border: '1px solid #e5e5e5'
-          }}>
-            <h3 style={{
-              fontSize: '1.25rem',
-              fontWeight: 600,
-              color: '#343541',
-              margin: '0 0 16px 0'
-            }}>
-              🔐 Admin Login
-            </h3>
-            <div style={{
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '12px'
-            }}>
-              <input
-                type="email"
-                placeholder="Email"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                style={{
-                  width: '100%',
-                  borderRadius: '12px',
-                  border: '2px solid #bfdbfe',
-                  padding: '12px 16px',
-                  fontSize: '16px',
-                  outline: 'none',
-                  transition: 'border-color 0.2s ease',
-                  fontFamily: "'Google Sans', 'Roboto', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif",
-                  boxSizing: 'border-box'
-                }}
-                onFocus={(e) => {
-                  e.target.style.borderColor = '#3b82f6';
-                }}
-                onBlur={(e) => {
-                  e.target.style.borderColor = '#bfdbfe';
-                }}
-              />
-              <input
-                type="password"
-                placeholder="Password"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                onKeyPress={(e) => {
-                  if (e.key === 'Enter' && email && password && !loading) {
-                    handleLogin();
-                  }
-                }}
-                style={{
-                  width: '100%',
-                  borderRadius: '12px',
-                  border: '2px solid #bfdbfe',
-                  padding: '12px 16px',
-                  fontSize: '16px',
-                  outline: 'none',
-                  transition: 'border-color 0.2s ease',
-                  fontFamily: "'Google Sans', 'Roboto', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif",
-                  boxSizing: 'border-box'
-                }}
-                onFocus={(e) => {
-                  e.target.style.borderColor = '#3b82f6';
-                }}
-                onBlur={(e) => {
-                  e.target.style.borderColor = '#bfdbfe';
-                }}
-              />
-              <button
-                onClick={handleLogin}
-                disabled={!email || !password || loading}
-                style={{
-                  background: email && password && !loading ? 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)' : '#e5e7eb',
-                  color: email && password && !loading ? '#ffffff' : '#9ca3af',
-                  border: 'none',
-                  borderRadius: '12px',
-                  padding: '12px 24px',
-                  fontWeight: 600,
-                  fontSize: '16px',
-                  cursor: email && password && !loading ? 'pointer' : 'not-allowed',
-                  transition: 'all 0.2s ease',
-                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                  fontFamily: "'Google Sans', 'Roboto', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif'",
-                  width: '100%'
-                }}
-                onMouseEnter={(e) => {
-                  if (email && password && !loading) {
-                    e.target.style.background = 'linear-gradient(135deg, #1d4ed8 0%, #1e3a8a 100%)';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (email && password && !loading) {
-                    e.target.style.background = 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)';
-                  }
-                }}
-              >
-                {loading ? (
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-                    <div style={{
-                      width: '16px',
-                      height: '16px',
-                      border: '2px solid #ffffff',
-                      borderTop: '2px solid transparent',
-                      borderRadius: '50%',
-                      animation: 'spin 1s linear infinite'
-                    }}></div>
-                    Logging in...
-                  </div>
-                ) : 'Login'}
-              </button>
-            </div>
-            {error && (
-              <div style={{
-                color: '#dc2626',
-                marginTop: '16px',
-                padding: '12px 16px',
-                background: '#fee2e2',
-                borderRadius: '8px',
-                border: '1px solid #fecaca',
-                fontWeight: 500
-              }}>
-                {error}
-              </div>
-            )}
-          </div>
 
           {/* Integration Manager Section */}
           {isAdminAuthenticated && (
@@ -939,6 +834,23 @@ export default function AdminDashboard() {
                         >
                           Set Price & Approve
                         </button>
+                        <button
+                          onClick={() => handleN8nQuoteReject(review.queue_id)}
+                          style={{
+                            background: '#ef4444',
+                            color: '#ffffff',
+                            border: 'none',
+                            borderRadius: '6px',
+                            padding: '8px 16px',
+                            fontWeight: 500,
+                            fontSize: '14px',
+                            cursor: 'pointer',
+                            marginLeft: '10px',
+                            transition: 'background 0.2s ease'
+                          }}
+                        >
+                          Decline
+                        </button>
                       </div>
                     </div>
                   ))}
@@ -1128,7 +1040,7 @@ export default function AdminDashboard() {
                             ✅ Approved Estimate Available
                           </div>
                           <div style={{ color: '#2563eb', fontSize: '14px' }}>
-                            Price: <strong>${approvedEstimate.calculatedPrice || approvedEstimate.originalEstimate}</strong>
+                            Price: <strong>${(approvedEstimate.calculatedPrice !== undefined && approvedEstimate.calculatedPrice !== null && approvedEstimate.calculatedPrice !== '') ? approvedEstimate.calculatedPrice : (approvedEstimate.originalEstimate || '0.00')}</strong>
                           </div>
                           {approvedEstimate.adminNotes && (
                             <div style={{ color: '#2563eb', fontSize: '12px', marginTop: '4px' }}>
@@ -1666,7 +1578,7 @@ export default function AdminDashboard() {
                               }}>
                                 <span style={{ color: 'white', fontSize: '16px' }}>⚠️</span>
                               </div>
-                              <h4 style={{ fontWeight: 'bold', color: '#343541', fontSize: '16px', margin: 0 }}>Pending Estimate Approval</h4>
+                              {/* Header removed as requested */}
                             </div>
 
                             <p style={{ color: '#374151', marginBottom: '16px' }}>
@@ -1959,14 +1871,14 @@ export default function AdminDashboard() {
               </div>
 
               {/* Display nodes requiring pricing if available */}
-              {selectedN8nReview.generated_quote?.items && selectedN8nReview.generated_quote.items.length > 0 && (
+              {(selectedN8nReview.generated_quote?.items && selectedN8nReview.generated_quote.items.length > 0) || true ? (
                 <div style={{ marginBottom: '16px' }}>
                   <div style={{
                     fontWeight: 500,
                     color: '#343541',
                     marginBottom: '8px'
                   }}>
-                    Workflow Nodes ({selectedN8nReview.generated_quote.items.length}):
+                    Workflow Nodes ({selectedN8nReview.generated_quote?.items?.length || 0}):
                   </div>
                   <div style={{
                     maxHeight: '250px',
@@ -1976,14 +1888,33 @@ export default function AdminDashboard() {
                     padding: '8px',
                     fontSize: '13px'
                   }}>
-                    {selectedN8nReview.generated_quote.items.map((item, index) => (
+                    {(selectedN8nReview.generated_quote?.items || []).map((item, index) => (
                       <div key={index} style={{
                         padding: '8px 0',
-                        borderBottom: index < selectedN8nReview.generated_quote.items.length - 1 ? '1px solid #f0f0f0' : 'none'
+                        borderBottom: index < (selectedN8nReview.generated_quote?.items?.length || 0) - 1 ? '1px solid #f0f0f0' : 'none'
                       }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                           <div>
-                            <span style={{ fontWeight: 500 }}>{item.node_label || item.node_type}</span>
+                            <span style={{ fontWeight: 500 }}>
+                              {item.node_type === 'custom' ? (
+                                <input
+                                  type="text"
+                                  value={item.node_label}
+                                  onChange={(e) => {
+                                    const updatedItems = [...selectedN8nReview.generated_quote.items];
+                                    updatedItems[index].node_label = e.target.value;
+                                    setSelectedN8nReview({
+                                      ...selectedN8nReview,
+                                      generated_quote: {
+                                        ...selectedN8nReview.generated_quote,
+                                        items: updatedItems
+                                      }
+                                    });
+                                  }}
+                                  style={{ border: '1px solid #ccc', padding: '2px', borderRadius: '3px', fontSize: '13px' }}
+                                />
+                              ) : (item.node_label || item.node_type)}
+                            </span>
                             {item.requires_manual_review && (
                               <span style={{
                                 background: '#fef3c7',
@@ -2045,8 +1976,42 @@ export default function AdminDashboard() {
                       </div>
                     ))}
                   </div>
+
+                  <button
+                    onClick={() => {
+                      const updatedItems = [...(selectedN8nReview.generated_quote.items || [])];
+                      updatedItems.push({
+                        node_label: 'Custom Item',
+                        node_type: 'custom',
+                        base_price: 0,
+                        tempPrice: 0,
+                        requires_manual_review: true
+                      });
+                      setSelectedN8nReview({
+                        ...selectedN8nReview,
+                        generated_quote: {
+                          ...selectedN8nReview.generated_quote,
+                          items: updatedItems
+                        }
+                      });
+                    }}
+                    style={{
+                      marginTop: '8px',
+                      background: '#e0f2fe',
+                      color: '#0284c7',
+                      border: '1px dashed #7dd3fc',
+                      borderRadius: '4px',
+                      padding: '6px 12px',
+                      fontSize: '12px',
+                      cursor: 'pointer',
+                      width: '100%',
+                      fontWeight: 500
+                    }}
+                  >
+                    + Add Custom Item
+                  </button>
                 </div>
-              )}
+              ) : null}
             </div>
 
             <div style={{
@@ -2182,7 +2147,8 @@ export default function AdminDashboard() {
             </div>
           </div>
         </div>
-      )}
-    </div>
+      )
+      }
+    </div >
   );
 }

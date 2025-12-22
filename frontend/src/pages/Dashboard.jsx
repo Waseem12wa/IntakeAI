@@ -90,8 +90,8 @@ export default function Dashboard() {
             <button
               onClick={() => setActiveTab('submissions')}
               className={`py-2 px-1 border-b-2 font-medium text-sm ${activeTab === 'submissions'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                ? 'border-blue-500 text-blue-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
               style={{
                 fontSize: 'clamp(12px, 2vw, 14px)',
@@ -103,8 +103,8 @@ export default function Dashboard() {
             <button
               onClick={() => setActiveTab('estimates')}
               className={`py-2 px-1 border-b-2 font-medium text-sm ${activeTab === 'estimates'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                ? 'border-blue-500 text-blue-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
               style={{
                 fontSize: 'clamp(12px, 2vw, 14px)',
@@ -140,6 +140,68 @@ export default function Dashboard() {
               </div>
             </div>
 
+            {/* Project Files Section */}
+            {modalData && modalData.files && modalData.files.length > 0 && (
+              <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+                <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                  <FileText className="w-5 h-5 text-blue-600" />
+                  Project Documents
+                </h3>
+                <ul className="space-y-2">
+                  {modalData.files.map((file, idx) => (
+                    <li key={idx} className="flex items-center gap-2 p-3 bg-gray-50 rounded border hover:bg-gray-100">
+                      <FileText className="w-4 h-4 text-gray-400" />
+                      <a
+                        href={`${process.env.REACT_APP_API_URL}/${file.path}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:underline font-medium"
+                      >
+                        {file.originalname || file.filename || "Download Document"}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Project Document / Estimate Status */}
+            {modalData && (
+              <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+                <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                  <FileText className="w-5 h-5 text-blue-600" />
+                  Project Status Document
+                </h3>
+
+                {modalData.estimate || modalData.n8nPricing ? (
+                  <div className="bg-blue-50 border border-blue-100 rounded-lg p-4 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="bg-white p-2 rounded border border-blue-100">
+                        <FileText className="w-6 h-6 text-blue-600" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-blue-900">Project_Requirements.pdf</p>
+                        <p className="text-sm text-blue-700">Generated on {new Date().toLocaleDateString()}</p>
+                      </div>
+                    </div>
+                    <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                      <Download className="w-4 h-4" />
+                      Download PDF
+                    </button>
+                  </div>
+                ) : (
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 flex items-start gap-3">
+                    <AlertCircle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-yellow-800 font-medium">No approved estimate found for this project</p>
+                      <p className="text-yellow-700 text-sm mt-1">
+                        Please approve an estimate first to generate the project document.
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
             {/* Table */}
             <div className="bg-white rounded-lg shadow p-6" style={{ padding: 'clamp(16px, 3vw, 24px)' }}>
               <h2 className="text-xl font-bold mb-4" style={{ fontSize: 'clamp(18px, 3vw, 20px)', marginBottom: 'clamp(12px, 2vw, 16px)' }}>Recent Submissions</h2>

@@ -40,7 +40,7 @@ export async function loginUser(data) {
 // Admin: list submissions
 export async function listSubmissions(token) {
 	const res = await axios.get('/api/admin/submissions', {
-		headers: { 'x-admin-token': token },
+		headers: { Authorization: `Bearer ${token}` },
 	});
 	return res.data;
 }
@@ -48,7 +48,7 @@ export async function listSubmissions(token) {
 // Admin: get single submission
 export async function getSubmission(id, token) {
 	const res = await axios.get(`/api/admin/submissions/${id}`, {
-		headers: { 'x-admin-token': token },
+		headers: { Authorization: `Bearer ${token}` },
 	});
 	return res.data;
 }
@@ -62,7 +62,7 @@ export function downloadDocument(id, type, token) {
 // Admin: list jobs
 export async function listJobs(token) {
 	const res = await axios.get('/api/admin/jobs', {
-		headers: { 'x-admin-token': token },
+		headers: { Authorization: `Bearer ${token}` },
 	});
 	return res.data;
 }
@@ -70,7 +70,7 @@ export async function listJobs(token) {
 // Admin: get single job
 export async function getJob(id, token) {
 	const res = await axios.get(`/api/admin/jobs/${id}`, {
-		headers: { 'x-admin-token': token },
+		headers: { Authorization: `Bearer ${token}` },
 	});
 	return res.data;
 }

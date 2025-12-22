@@ -4,18 +4,10 @@ const Submission = require('../models/Submission');
 const Job = require('../models/Job');
 
 
-// Basic token authentication middleware
-function authMiddleware(req, res, next) {
-	const token = req.headers['x-admin-token'] || req.query.token;
-	const ADMIN_TOKEN = process.env.ADMIN_TOKEN || 'changeme';
-	if (token === ADMIN_TOKEN) {
-		return next();
-	}
-	return res.status(401).json({ success: false, error: 'Unauthorized' });
-}
+const { checkAdmin } = require('../middleware/authMiddleware');
 
-// Apply auth middleware to all admin routes
-router.use(authMiddleware);
+// Apply admin auth middleware to all admin routes
+router.use(checkAdmin);
 
 // GET /api/admin/submissions - list all submissions (paginated)
 router.get('/submissions', async (req, res) => {

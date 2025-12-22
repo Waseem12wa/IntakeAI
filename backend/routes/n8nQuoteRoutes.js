@@ -629,8 +629,16 @@ router.post('/save-chat', authenticateUser, async (req, res) => {
 
 /**
  * GET /api/n8n-quote/chats
- * Gets all n8n quote chats
  */
+// Get all pending n8n quotes
+router.get('/pending', async (req, res) => {
+  try {
+    const quotes = await N8nQuote.find({ status: 'Pending' }).sort({ createdAt: -1 });
+    res.json(quotes);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
 router.get('/chats', async (req, res) => {
   try {
     const chats = await N8nQuoteChat.find().sort({ createdAt: -1 });
@@ -1123,6 +1131,48 @@ router.post('/approve-with-price', async (req, res) => {
 });
 
 /**
+ * POST /api/n8n-quote/approve/:id
+ * Approves an n8n quote and sets its pricing
+ */
+router.post('/approve/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { pricing } = req.body; // Expect pricing to be sent in the request body
+
+    const quote = await N8nQuote.findById(id);
+    if (!quote) {
+      return res.status(404).json({ message: 'Quote not found' });
+    }
+
+    // Update the quote status and pricing
+    quote.status = 'Approved';
+    quote.pricing = pricing; // Save confirmed pricing
+    await quote.save();
+
+    // Find the project associated with the quote using queueId
+    // Assuming N8nQuote has a 'queueId' field that links to a Project
+    const project = await Project.findOneAndUpdate(
+      { queueId: quote.queueId },
+      {
+        status: 'Active',
+        approvedQuoteId: quote._id,
+        n8nPricing: quote.pricing
+      },
+      { new: true }
+    );
+
+    // Generate success link
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+    const successLink = `${frontendUrl}/success?id=${quote._id}`;
+
+    res.status(200).json({ message: 'Quote approved successfully', successLink });
+  } catch (error) {
+    console.error('Error approving n8n quote:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+/**
  * POST /api/n8n-quote/reject-review
  * Rejects a review
  */
@@ -1325,6 +1375,26 @@ router.post('/update-integration-status', authenticateUser, async (req, res) => 
       message: 'An unexpected error occurred while updating integration status',
       details: { reason: error.message }
     });
+  }
+});
+
+// Reject n8n Quote
+router.post('/reject/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const quote = await N8nQuote.findById(id);
+    if (!quote) {
+      return res.status(404).json({ message: 'Quote not found' });
+    }
+
+    quote.status = 'Rejected';
+    await quote.save();
+
+    res.status(200).json({ message: 'Quote rejected successfully', quote });
+  } catch (error) {
+    console.error('Error rejecting n8n quote:', error);
+    res.status(500).json({ message: 'Server error' });
   }
 });
 
